@@ -22,7 +22,12 @@ func JwtMiddleware(config *common.Config) gin.HandlerFunc {
 				return
 			}
 
-			_, err = GetClaims(jwtToken)
+			claims, err := GetClaims(jwtToken)
+			userID := claims["userID"].(float64)
+
+			//set to gin Context
+			c.Set("user_id", int(userID))
+
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized"})
 				return

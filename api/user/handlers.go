@@ -6,10 +6,8 @@ import (
 	"net/http"
 	"sushi-mart/common"
 	"sushi-mart/internal/database"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -68,7 +66,7 @@ func (r *RoutesWrapper) Login(config *common.Config) gin.HandlerFunc {
 		}
 
 		//generate 1hr long token and return
-		token, err := generateNewToken(resp.Email, config)
+		token, err := common.GenerateNewToken(resp.ID, config)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
@@ -82,18 +80,101 @@ func (r *RoutesWrapper) Login(config *common.Config) gin.HandlerFunc {
 	}
 }
 
-func generateNewToken(userId string, config *common.Config) (string, error) {
-	customClaim := CustomClaims{
-		UserId: userId,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * time.Duration(1)).Unix(),
-			IssuedAt:  time.Now().Unix(),
-		},
+func (r *RoutesWrapper) HandleCreateWallet(c *gin.Context) {
+	//get userID from gin context
+	userID, ok := c.Get("user_id")
+	if !ok {
+		c.JSON(http.StatusBadRequest, "userID missing in the context")
+		return
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaim)
-	sToken, err := token.SignedString([]byte(config.JwtSktKey))
+
+	Id, isok := userID.(int)
+	if !isok {
+		c.JSON(http.StatusBadRequest, "userID not of type int")
+		return
+	}
+
+	var input CreateWalletReq
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err := r.UsersService.CreateUserWallet(c.Request.Context(), &input, Id)
+
 	if err != nil {
-		return "", err
+		c.JSON(err.Status, err.Message)
+		return
 	}
-	return sToken, nil
+
+	c.JSON(http.StatusOK, "succesfully created the wallet")
+	return
+
+}
+
+func (r *RoutesWrapper) HandleGetWallet(c *gin.Context) {
+	//get userID from gin context
+	userID, ok := c.Get("user_id")
+	if !ok {
+		c.JSON(http.StatusBadRequest, "userID missing in the context")
+		return
+	}
+
+	Id, isok := userID.(int)
+	if !isok {
+		c.JSON(http.StatusBadRequest, "userID not of type int")
+		return
+	}
+
+	resp, err := r.UsersService.GetUserWallet(c.Request.Context(), Id)
+
+	if err != nil {
+		c.JSON(err.Status, err.Message)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+	return
+}
+
+func (r *RoutesWrapper) HandleUpdateWallet(c *gin.Context) {
+	//get userID from gin context
+	userID, ok := c.Get("user_id")
+	if !ok {
+		c.JSON(http.StatusBadRequest, "userID missing in the context")
+		return
+	}
+
+	Id, isok := userID.(int)
+	if !isok {
+		c.JSON(http.StatusBadRequest, "userID not of type int")
+		return
+	}
+
+	var input UpdateWalletReq
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err := r.UsersService.UpdateUserWallet(c.Request.Context(), &input, Id)
+
+	if err != nil {
+		c.JSON(err.Status, err.Message)
+		return
+	}
+
+	c.JSON(http.StatusOK, "successfully updated your wallet")
+	return
+}
+
+func (r *RoutesWrapper) HandleAllProducts(c *gin.Context) {
+	resp, err := r.UsersService.GetAllProducts(c.Request.Context())
+	if err != nil {
+		c.JSON(err.Status, err.Message)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+	return
 }

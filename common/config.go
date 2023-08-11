@@ -12,6 +12,8 @@ type Config struct {
 	PgUser    string
 	PgPass    string
 	JwtSktKey string
+	AdminUser string
+	AdminPass string
 }
 
 func GetConfig() *Config {
@@ -23,7 +25,9 @@ func GetConfig() *Config {
 	return &Config{
 		PgDbName:  os.Getenv("POSTGRES_DB"),
 		PgUser:    os.Getenv("POSTGRES_USER"),
-		PgPass:    os.Getenv("sushimartpass"),
-		JwtSktKey: os.Getenv("MyLittleSecret"),
+		PgPass:    os.Getenv("POSTGRES_PASS"),
+		JwtSktKey: os.Getenv("JWTSECRETKEY"),
+		AdminUser: os.Getenv("ADMIN_USER"),
+		AdminPass: os.Getenv("ADMIN_PASS"),
 	}
 }

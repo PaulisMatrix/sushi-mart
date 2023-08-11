@@ -6,6 +6,7 @@ package database
 
 import (
 	"database/sql"
+	"time"
 )
 
 type Customer struct {
@@ -15,4 +16,23 @@ type Customer struct {
 	Email    string
 	Phone    sql.NullString
 	Address  sql.NullString
+}
+
+type Productitem struct {
+	ID           int32
+	Name         string
+	Quantity     int32
+	Category     string
+	UnitPrice    string
+	DateAdded    time.Time
+	DateModified time.Time
+}
+
+type Wallet struct {
+	ID           int32
+	Balance      string
+	WalletType   string
+	DateAdded    time.Time
+	DateModified time.Time
+	CustomerID   sql.NullInt32
 }
