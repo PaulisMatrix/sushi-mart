@@ -17,6 +17,25 @@ func (v *Validator) AddReview(ctx context.Context, req *AddReviewReq, custId int
 
 func (u *UsersServiceImpl) AddReview(ctx context.Context, req *AddReviewReq, custId int) *common.ErrorResponse {
 	logger := common.ExtractLoggerUnsafe(ctx).WithFields(logrus.Fields{"method": "AddReview", "request": req})
+
+	// first check if the user had placed an order for the product they are adding review for
+	_, err := u.Queries.ValidateProductOrderReview(ctx, sql.NullInt32{Int32: int32(req.ProductId), Valid: true})
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// user hasn't purchased that product yet
+			logger.WithError(err).Info("user hasn't purchased this product yet")
+			return &common.ErrorResponse{
+				Status:  http.StatusBadRequest,
+				Message: "need to purchase this product before reviewing",
+			}
+		}
+		logger.WithError(err).Error("failed to get order for the corresponding product_id")
+		return &common.ErrorResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "internal server error",
+		}
+	}
+
 	dbParams := database.AddReviewParams{
 		Rating:     int32(req.Rating),
 		ReviewText: req.ReviewText,
@@ -25,8 +44,8 @@ func (u *UsersServiceImpl) AddReview(ctx context.Context, req *AddReviewReq, cus
 		ProductID:  sql.NullInt32{Int32: int32(req.ProductId), Valid: true},
 	}
 
-	err := u.Queries.AddReview(ctx, dbParams)
-	if err != nil {
+	reviewErr := u.Queries.AddReview(ctx, dbParams)
+	if reviewErr != nil {
 		logger.WithError(err).Error("error in adding a new customer review")
 		return &common.ErrorResponse{
 			Status:  http.StatusInternalServerError,

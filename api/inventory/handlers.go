@@ -22,7 +22,12 @@ import (
 func (r *RoutesWrapper) HandleAllProducts(c *gin.Context) {
 	resp, err := r.InventoryService.GetAllProducts(c.Request.Context())
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
+		return
+	}
+
+	if resp.Products == nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "no products in the inventory yet"})
 		return
 	}
 
@@ -48,18 +53,18 @@ func (r *RoutesWrapper) HandleAddProduct(c *gin.Context) {
 	var input AddProductReq
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, "bad request")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
 
 	err := r.InventoryService.AddProduct(c.Request.Context(), &input)
 
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
 		return
 	}
 
-	c.JSON(http.StatusOK, "a new product added!")
+	c.JSON(http.StatusOK, gin.H{"message": "a new product added!"})
 	return
 }
 
@@ -82,21 +87,21 @@ func (r *RoutesWrapper) HandleUpdateProduct(c *gin.Context) {
 
 	var pathParams pathParameters
 	if err := c.ShouldBindUri(&pathParams); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
 
 	var input UpdateProductReq
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, "bad request")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
 
 	resp, err := r.InventoryService.UpdateProduct(c.Request.Context(), int(pathParams.ID), &input)
 
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
 		return
 	}
 
@@ -121,17 +126,17 @@ func (r *RoutesWrapper) HandleUpdateProduct(c *gin.Context) {
 func (r *RoutesWrapper) HandleDeleteProduct(c *gin.Context) {
 	var pathParams pathParameters
 	if err := c.ShouldBindUri(&pathParams); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
 
 	err := r.InventoryService.DeleteProduct(c.Request.Context(), int(pathParams.ID))
 
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
 		return
 	}
 
-	c.JSON(http.StatusOK, "successfully deleted the product")
+	c.JSON(http.StatusOK, gin.H{"message": "successfully deleted the product"})
 	return
 }

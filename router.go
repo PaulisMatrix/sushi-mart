@@ -24,6 +24,8 @@ func healthCheck(c *gin.Context) {
 }
 
 func helloAdmin(c *gin.Context) {
+	logger := common.ExtractLoggerUnsafe(c.Request.Context())
+	logger.WithError(nil).WithField("method", "helloAdmin").Error(" called")
 	c.JSON(http.StatusOK, gin.H{"status": "granted admin access!!"})
 }
 
@@ -36,6 +38,10 @@ func setupMiddlewares(router *gin.RouterGroup, config *common.Config, logger *lo
 
 func setupRoutes(engine *gin.Engine, Queries *database.Queries, config *common.Config, logger *logrus.Logger) {
 	router := engine.Group("/api/v1")
+
+	//default middlewares
+	router.Use(middlewares.CORSMiddleware())
+	router.Use(middlewares.LoggerMiddleware(logger))
 
 	//add your routes here
 	router.GET("/ping", healthCheck)
@@ -64,10 +70,8 @@ func setupRoutes(engine *gin.Engine, Queries *database.Queries, config *common.C
 	users := router.Group("/users")
 	user.New(Queries).HandleUsers(users, config)
 
-	//setup middlewares
-	setupMiddlewares(router, config, logger)
-
 	//jwt authenticated routes
+	router.Use(middlewares.JwtMiddleware(config))
 	orderRouterGrp := router.Group("/orders")
 	orders.New(Queries).HandleOrders(orderRouterGrp)
 }

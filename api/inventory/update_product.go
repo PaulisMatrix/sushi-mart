@@ -21,23 +21,35 @@ func (i *InventoryServiceImpl) UpdateProduct(ctx context.Context, Id int, req *U
 
 	dbParams := database.UpdateProductParams{ID: int32(Id), UpdateDateModified: true, DateModified: time.Now().Local()}
 
-	if req.Name != "" {
+	if req.Name == "" {
+		dbParams.UpdateName = false
+		dbParams.Name = req.Name
+	} else {
 		dbParams.UpdateName = true
 		dbParams.Name = req.Name
 	}
 
-	if req.Quantity != 0 {
+	if req.Quantity > 0 {
 		dbParams.UpdateQuantity = true
+		dbParams.Quantity = req.Quantity
+	} else {
+		dbParams.UpdateQuantity = false
 		dbParams.Quantity = req.Quantity
 	}
 
-	if req.Category != "" {
+	if req.Category == "" {
+		dbParams.UpdateCategory = false
+		dbParams.Category = req.Category
+	} else {
 		dbParams.UpdateCategory = true
 		dbParams.Category = req.Category
 	}
 
-	if req.UnitPrice != 0 {
+	if req.UnitPrice > 0 {
 		dbParams.UpdateUnitPrice = true
+		dbParams.UnitPrice = strconv.FormatFloat(req.UnitPrice, 'E', -1, 64)
+	} else {
+		dbParams.UpdateUnitPrice = false
 		dbParams.UnitPrice = strconv.FormatFloat(req.UnitPrice, 'E', -1, 64)
 	}
 

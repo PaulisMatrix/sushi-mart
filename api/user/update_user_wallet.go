@@ -21,13 +21,20 @@ func (u *UsersServiceImpl) UpdateUserWallet(ctx context.Context, req *UpdateWall
 
 	dbParams := database.UpdateBalanceParams{ID: int32(Id), UpdateDateModified: true, DateModified: time.Now().Local()}
 
-	if req.Balance != 0 {
+	if req.Balance > 0 {
 		dbParams.UpdateBalance = true
+		dbParams.Balance = strconv.FormatFloat(req.Balance, 'E', -1, 64)
+	} else {
+		dbParams.UpdateBalance = false
 		dbParams.Balance = strconv.FormatFloat(req.Balance, 'E', -1, 64)
 	}
 
-	if req.WalletType != "" {
+	if req.WalletType == "" {
+		dbParams.UpdateWalletType = false
+		dbParams.WalletType = req.WalletType
+	} else {
 		dbParams.UpdateWalletType = true
+		dbParams.WalletType = req.WalletType
 	}
 
 	err := u.Queries.UpdateBalance(ctx, dbParams)

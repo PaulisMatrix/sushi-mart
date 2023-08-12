@@ -31,7 +31,7 @@ UPDATE productItems
 SET name = CASE WHEN @update_name::boolean THEN @name::VARCHAR(50) ELSE name END,
     quantity = CASE WHEN @update_quantity::boolean THEN @quantity::INT ELSE quantity END,
     category = CASE WHEN @update_category::boolean THEN @category::VARCHAR(50) ELSE category END,
-    unit_price = CASE WHEN @update_unit_price::boolean THEN @unit_price::DECIMAL(5,2) ELSE unit_price END,
+    unit_price = CASE WHEN @update_unit_price::boolean THEN @unit_price::DECIMAL(10,2) ELSE unit_price END,
     date_modified = CASE WHEN @update_date_modified::boolean THEN @date_modified::TIMESTAMP ELSE date_modified END
 WHERE id = @id
 RETURNING *;  
@@ -44,13 +44,13 @@ INSERT INTO wallet(
 );
 
 -- name: GetWallet :one
-SELECT c.username, w.balance, w.wallet_type FROM wallet w 
+SELECT c.username, w.balance, w.wallet_type, w.date_added FROM wallet w 
 INNER JOIN customers c ON w.customer_id=c.id
 WHERE c.id = $1;
 
 -- name: UpdateBalance :exec
 UPDATE wallet 
-SET balance = CASE WHEN @update_balance::boolean THEN @balance::DECIMAL(10,3) ELSE balance END,
+SET balance = CASE WHEN @update_balance::boolean THEN @balance::DECIMAL(20,3) ELSE balance END,
     wallet_type = CASE WHEN @update_wallet_type::boolean THEN @wallet_type::VARCHAR(20) ELSE wallet_type END,
     date_modified = CASE WHEN @update_date_modified::boolean THEN @date_modified::TIMESTAMP ELSE date_modified END
 WHERE id = @id;
@@ -96,3 +96,7 @@ FROM orders o INNER JOIN customers c ON o.customer_id = c.id
 INNER JOIN productItems p ON o.product_id = p.id
 WHERE c.id = $1 
 ORDER BY o.order_date DESC;
+
+-- name: ValidateProductOrderReview :one
+SELECT * from orders 
+WHERE product_id = $1;

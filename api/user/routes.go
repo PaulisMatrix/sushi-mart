@@ -2,6 +2,7 @@ package user
 
 import (
 	"sushi-mart/common"
+	"sushi-mart/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,6 +11,7 @@ func (wrapper *RoutesWrapper) HandleUsers(router *gin.RouterGroup, config *commo
 	router.POST("/signup", wrapper.SignUp)
 	router.POST("/login", wrapper.Login(config))
 
+	router.Use(middlewares.JwtMiddleware(config))
 	//for creating wallet/adding balance
 	router.POST("/create-wallet", wrapper.HandleCreateWallet)
 	router.GET("/get-wallet", wrapper.HandleGetWallet)

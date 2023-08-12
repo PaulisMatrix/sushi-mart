@@ -24,9 +24,10 @@ type CreateWalletReq struct {
 }
 
 type GetWalletRes struct {
-	Username   string  `json:"username"`
-	Balance    float64 `json:"balance"`
-	WalletType string  `json:"wallet_type"`
+	Username    string  `json:"username"`
+	Balance     float64 `json:"balance"`
+	WalletType  string  `json:"wallet_type"`
+	WalletAdded string  `json:"date_added"`
 }
 
 type UpdateWalletReq struct {

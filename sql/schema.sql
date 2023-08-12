@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS productItems(
 	name VARCHAR(50) NOT NULL,
     quantity INT NOT NULL,
 	category VARCHAR(50) NOT NULL,
-    unit_price DECIMAL(5,2) NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
     date_added TIMESTAMP NOT NULL,
     date_modified TIMESTAMP NOT NULL 
 );
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS productItems(
 -- Define the Wallet table
 CREATE TABLE wallet(
 	id SERIAL PRIMARY KEY,
-	balance DECIMAL(10,3) NOT NULL,
+	balance DECIMAL(20,3) NOT NULL,
 	wallet_type VARCHAR(20) NOT NULL,
 	date_added TIMESTAMP NOT NULL,
     date_modified TIMESTAMP NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE wallet(
 CREATE TABLE orders(
 	id SERIAL PRIMARY KEY,
 	order_status VARCHAR(20) NOT NULL,
-	total_amt DECIMAL(10,3) NOT NULL,
+	total_amt DECIMAL(20,3) NOT NULL,
 	units INT NOT NULL,
 	payment_type VARCHAR(20) NOT NULL,
 	order_date TIMESTAMP NOT NULL,

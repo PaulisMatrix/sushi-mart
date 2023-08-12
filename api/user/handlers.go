@@ -25,17 +25,17 @@ func (r *RoutesWrapper) SignUp(c *gin.Context) {
 	var input SignUpReq
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, "bad request")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
 
 	err := r.UsersService.CreateUser(c.Request.Context(), &input)
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
 		return
 	}
 
-	c.JSON(http.StatusOK, "new user created successfully")
+	c.JSON(http.StatusOK, gin.H{"message": "account created successfully"})
 	return
 }
 
@@ -56,26 +56,26 @@ func (r *RoutesWrapper) Login(config *common.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input LoginReq
 		if err := c.ShouldBindJSON(&input); err != nil {
-			c.JSON(http.StatusBadRequest, "bad request")
+			c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 			return
 		}
 
 		resp, err := r.UsersService.GetUser(c.Request.Context(), &input)
 		if err != nil {
-			c.JSON(err.Status, err.Message)
+			c.JSON(err.Status, gin.H{"message": err.Message})
 			return
 		}
 
 		hashErr := bcrypt.CompareHashAndPassword([]byte(resp.Password), []byte(input.Password))
 		if hashErr != nil && hashErr == bcrypt.ErrMismatchedHashAndPassword {
-			c.JSON(http.StatusForbidden, "invalid credentials")
+			c.JSON(http.StatusForbidden, gin.H{"message": "invalid credentials"})
 			return
 		}
 
 		//generate 1hr long token and return
 		token, tokenErr := common.GenerateNewToken(int32(resp.CustId), config)
 		if tokenErr != nil {
-			c.JSON(http.StatusInternalServerError, "internal server error")
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "internal server error"})
 			return
 		}
 		loginRes := &LoginResp{
@@ -104,30 +104,30 @@ func (r *RoutesWrapper) HandleCreateWallet(c *gin.Context) {
 	//get userID from gin context
 	userID, ok := c.Get("user_id")
 	if !ok {
-		c.JSON(http.StatusBadRequest, "userID missing in the context")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID missing in the context"})
 		return
 	}
 
 	Id, isok := userID.(int)
 	if !isok {
-		c.JSON(http.StatusBadRequest, "userID not of type int")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID not of type int"})
 		return
 	}
 
 	var input CreateWalletReq
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, "bad request")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
 
 	err := r.UsersService.CreateUserWallet(c.Request.Context(), &input, Id)
 
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
 		return
 	}
 
-	c.JSON(http.StatusOK, "succesfully created the wallet")
+	c.JSON(http.StatusOK, gin.H{"message": "succesfully created the wallet"})
 	return
 
 }
@@ -148,20 +148,20 @@ func (r *RoutesWrapper) HandleGetWallet(c *gin.Context) {
 	//get userID from gin context
 	userID, ok := c.Get("user_id")
 	if !ok {
-		c.JSON(http.StatusBadRequest, "userID missing in the context")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID missing in the context"})
 		return
 	}
 
 	Id, isok := userID.(int)
 	if !isok {
-		c.JSON(http.StatusBadRequest, "userID not of type int")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID not of type int"})
 		return
 	}
 
 	resp, err := r.UsersService.GetUserWallet(c.Request.Context(), Id)
 
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
 		return
 	}
 
@@ -186,30 +186,30 @@ func (r *RoutesWrapper) HandleUpdateWallet(c *gin.Context) {
 	//get userID from gin context
 	userID, ok := c.Get("user_id")
 	if !ok {
-		c.JSON(http.StatusBadRequest, "userID missing in the context")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID missing in the context"})
 		return
 	}
 
 	Id, isok := userID.(int)
 	if !isok {
-		c.JSON(http.StatusBadRequest, "userID not of type int")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID not of type int"})
 		return
 	}
 
 	var input UpdateWalletReq
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, "bad request")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
 
 	err := r.UsersService.UpdateUserWallet(c.Request.Context(), &input, Id)
 
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
 		return
 	}
 
-	c.JSON(http.StatusOK, "successfully updated your wallet")
+	c.JSON(http.StatusOK, gin.H{"message": "successfully updated your wallet"})
 	return
 }
 
@@ -228,7 +228,12 @@ func (r *RoutesWrapper) HandleUpdateWallet(c *gin.Context) {
 func (r *RoutesWrapper) HandleAllProducts(c *gin.Context) {
 	resp, err := r.UsersService.GetAllProducts(c.Request.Context())
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
+		return
+	}
+
+	if resp.Products == nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "no products in the inventory yet"})
 		return
 	}
 
@@ -253,29 +258,29 @@ func (r *RoutesWrapper) HandleAddReview(c *gin.Context) {
 	//get userID from gin context
 	userID, ok := c.Get("user_id")
 	if !ok {
-		c.JSON(http.StatusBadRequest, "userID missing in the context")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID missing in the context"})
 		return
 	}
 
 	custId, isok := userID.(int)
 	if !isok {
-		c.JSON(http.StatusBadRequest, "userID not of type int")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID not of type int"})
 		return
 	}
 
 	var input AddReviewReq
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, "bad request")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
 
 	err := r.UsersService.AddReview(c.Request.Context(), &input, custId)
 
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
 		return
 	}
 
-	c.JSON(http.StatusOK, "successfully added your review")
+	c.JSON(http.StatusOK, gin.H{"message": "successfully added your review"})
 	return
 }

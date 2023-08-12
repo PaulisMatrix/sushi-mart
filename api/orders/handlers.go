@@ -24,30 +24,30 @@ func (r *RoutesWrapper) HandlePlaceOrder(c *gin.Context) {
 	//get userID from gin context
 	userID, ok := c.Get("user_id")
 	if !ok {
-		c.JSON(http.StatusBadRequest, "userID missing in the context")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID missing in the context"})
 		return
 	}
 
 	custId, isok := userID.(int)
 	if !isok {
-		c.JSON(http.StatusBadRequest, "userID not of type int")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID not of type int"})
 		return
 	}
 
 	var input PlaceOrderReq
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, "bad request")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
 
 	err := r.OrderService.PlaceOrder(c.Request.Context(), &input, custId)
 
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
 		return
 	}
 
-	c.JSON(http.StatusOK, "order placed successfully")
+	c.JSON(http.StatusOK, gin.H{"message": "order placed successfully"})
 	return
 }
 
@@ -68,18 +68,18 @@ func (r *RoutesWrapper) HandlePlaceOrder(c *gin.Context) {
 func (r *RoutesWrapper) HandleCancelOrder(c *gin.Context) {
 	var input UpdateOrderReq
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, "bad request")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
 
 	err := r.OrderService.CancelOrder(c.Request.Context(), &input)
 
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
 		return
 	}
 
-	c.JSON(http.StatusOK, "order cancelled successfully")
+	c.JSON(http.StatusOK, gin.H{"message": "order cancelled successfully"})
 	return
 }
 
@@ -100,20 +100,20 @@ func (r *RoutesWrapper) HandleGetOrders(c *gin.Context) {
 	//get userID from gin context
 	userID, ok := c.Get("user_id")
 	if !ok {
-		c.JSON(http.StatusBadRequest, "userID missing in the context")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID missing in the context"})
 		return
 	}
 
 	custId, isok := userID.(int)
 	if !isok {
-		c.JSON(http.StatusBadRequest, "userID not of type int")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "userID not of type int"})
 		return
 	}
 
 	resp, err := r.OrderService.GetOrders(c.Request.Context(), custId)
 
 	if err != nil {
-		c.JSON(err.Status, err.Message)
+		c.JSON(err.Status, gin.H{"message": err.Message})
 		return
 	}
 

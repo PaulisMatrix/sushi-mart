@@ -340,7 +340,7 @@ func (q *Queries) GetProductItem(ctx context.Context, id int32) (Productitem, er
 }
 
 const getWallet = `-- name: GetWallet :one
-SELECT c.username, w.balance, w.wallet_type FROM wallet w 
+SELECT c.username, w.balance, w.wallet_type, w.date_added FROM wallet w 
 INNER JOIN customers c ON w.customer_id=c.id
 WHERE c.id = $1
 `
@@ -349,12 +349,18 @@ type GetWalletRow struct {
 	Username   string
 	Balance    string
 	WalletType string
+	DateAdded  time.Time
 }
 
 func (q *Queries) GetWallet(ctx context.Context, id int32) (GetWalletRow, error) {
 	row := q.db.QueryRowContext(ctx, getWallet, id)
 	var i GetWalletRow
-	err := row.Scan(&i.Username, &i.Balance, &i.WalletType)
+	err := row.Scan(
+		&i.Username,
+		&i.Balance,
+		&i.WalletType,
+		&i.DateAdded,
+	)
 	return i, err
 }
 
@@ -391,7 +397,7 @@ func (q *Queries) PlaceOrder(ctx context.Context, arg PlaceOrderParams) error {
 
 const updateBalance = `-- name: UpdateBalance :exec
 UPDATE wallet 
-SET balance = CASE WHEN $1::boolean THEN $2::DECIMAL(10,3) ELSE balance END,
+SET balance = CASE WHEN $1::boolean THEN $2::DECIMAL(20,3) ELSE balance END,
     wallet_type = CASE WHEN $3::boolean THEN $4::VARCHAR(20) ELSE wallet_type END,
     date_modified = CASE WHEN $5::boolean THEN $6::TIMESTAMP ELSE date_modified END
 WHERE id = $7
@@ -444,7 +450,7 @@ UPDATE productItems
 SET name = CASE WHEN $1::boolean THEN $2::VARCHAR(50) ELSE name END,
     quantity = CASE WHEN $3::boolean THEN $4::INT ELSE quantity END,
     category = CASE WHEN $5::boolean THEN $6::VARCHAR(50) ELSE category END,
-    unit_price = CASE WHEN $7::boolean THEN $8::DECIMAL(5,2) ELSE unit_price END,
+    unit_price = CASE WHEN $7::boolean THEN $8::DECIMAL(10,2) ELSE unit_price END,
     date_modified = CASE WHEN $9::boolean THEN $10::TIMESTAMP ELSE date_modified END
 WHERE id = $11
 RETURNING id, name, quantity, category, unit_price, date_added, date_modified
@@ -487,6 +493,27 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (P
 		&i.UnitPrice,
 		&i.DateAdded,
 		&i.DateModified,
+	)
+	return i, err
+}
+
+const validateProductOrderReview = `-- name: ValidateProductOrderReview :one
+SELECT id, order_status, total_amt, units, payment_type, order_date, customer_id, product_id from orders 
+WHERE product_id = $1
+`
+
+func (q *Queries) ValidateProductOrderReview(ctx context.Context, productID sql.NullInt32) (Order, error) {
+	row := q.db.QueryRowContext(ctx, validateProductOrderReview, productID)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.OrderStatus,
+		&i.TotalAmt,
+		&i.Units,
+		&i.PaymentType,
+		&i.OrderDate,
+		&i.CustomerID,
+		&i.ProductID,
 	)
 	return i, err
 }

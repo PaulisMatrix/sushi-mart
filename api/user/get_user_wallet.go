@@ -36,8 +36,9 @@ func (u *UsersServiceImpl) GetUserWallet(ctx context.Context, Id int) (*GetWalle
 	}
 	bal, _ := strconv.ParseFloat(resp.Balance, 64)
 	return &GetWalletRes{
-		Username:   resp.Username,
-		Balance:    bal,
-		WalletType: resp.WalletType,
+		Username:    resp.Username,
+		Balance:     bal,
+		WalletType:  resp.WalletType,
+		WalletAdded: resp.DateAdded.String(),
 	}, nil
 }
