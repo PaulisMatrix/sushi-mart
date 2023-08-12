@@ -12,8 +12,11 @@ func (v *Validator) GetAllProducts(ctx context.Context) (*GetAllProductsResp, *c
 }
 
 func (i *InventoryServiceImpl) GetAllProducts(ctx context.Context) (*GetAllProductsResp, *common.ErrorResponse) {
+	logger := common.ExtractLoggerUnsafe(ctx).WithField("method", "GetAllProducts")
+
 	resp, err := i.Queries.GetAllProducts(ctx)
 	if err != nil {
+		logger.WithError(err).Error("error in getting all products from the inventory")
 		return nil, &common.ErrorResponse{
 			Message: "internal server error",
 			Status:  http.StatusInternalServerError,

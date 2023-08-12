@@ -46,3 +46,9 @@ type ProductResp struct {
 type GetAllProductsResp struct {
 	Products []ProductResp `json:"products"`
 }
+
+type AddReviewReq struct {
+	Rating     int    `json:"rating" binding:"required"`
+	ReviewText string `json:"review_text" binding:"required"`
+	ProductId  int    `json:"product_id" binding:"required"`
+}

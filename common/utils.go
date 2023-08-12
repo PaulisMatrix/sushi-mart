@@ -1,9 +1,11 @@
 package common
 
 import (
+	"context"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/sirupsen/logrus"
 )
 
 type ErrorResponse struct {
@@ -30,4 +32,20 @@ func GenerateNewToken(userId int32, config *Config) (string, error) {
 		return "", err
 	}
 	return sToken, nil
+}
+
+type LoggerKey struct{}
+
+// extract logger unsafe
+func ExtractLoggerUnsafe(ctx context.Context) *logrus.Logger {
+	switch ctx.Value(LoggerKey{}).(type) {
+	case *logrus.Logger:
+		lg, ok := ctx.Value(LoggerKey{}).(*logrus.Logger)
+		if !ok {
+			panic("logrus.logger not being set properly")
+		}
+		return lg
+	default:
+		panic("logger not being set properly")
+	}
 }

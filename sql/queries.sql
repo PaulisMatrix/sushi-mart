@@ -52,3 +52,22 @@ SET balance = CASE WHEN @update_balance::boolean THEN @balance::DECIMAL(10,3) EL
     wallet_type = CASE WHEN @update_wallet_type::boolean THEN @wallet_type::VARCHAR(20) ELSE wallet_type END,
     date_modified = CASE WHEN @update_date_modified::boolean THEN @date_modified::TIMESTAMP ELSE date_modified END
 WHERE id = @id;
+
+-- name: AddReview :exec
+INSERT INTO productReviews(
+  rating, review_text, review_date, customer_id, product_id
+) VALUES (
+  $1, $2, $3, $4, $5
+);
+
+
+-- name: GetAvgCustomerRatings :many
+SELECT p.name, p.category, ROUND(COALESCE(AVG(pr.rating),0)::numeric,2) AS average_rating FROM productItems p 
+LEFT JOIN productReviews pr ON p.id = pr.product_id 
+GROUP BY p.id;
+
+-- name: GetMostOrdersPlaced :many
+SELECT c.username, c.email, COUNT(o.id) as orders_count FROM customers c
+INNER JOIN orders o ON c.id = o.customer_id 
+GROUP BY c.id 
+ORDER BY orders_count DESC;

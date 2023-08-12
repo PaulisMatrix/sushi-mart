@@ -7,6 +7,8 @@ import (
 	"sushi-mart/common"
 	"sushi-mart/internal/database"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 func (v *Validator) AddProduct(ctx context.Context, req *AddProductReq) *common.ErrorResponse {
@@ -14,6 +16,7 @@ func (v *Validator) AddProduct(ctx context.Context, req *AddProductReq) *common.
 }
 
 func (i *InventoryServiceImpl) AddProduct(ctx context.Context, req *AddProductReq) *common.ErrorResponse {
+	logger := common.ExtractLoggerUnsafe(ctx).WithFields(logrus.Fields{"method": "AddProduct", "request": req})
 
 	dbParams := database.AddProductParams{
 		Name:         req.Name,
@@ -26,6 +29,7 @@ func (i *InventoryServiceImpl) AddProduct(ctx context.Context, req *AddProductRe
 	err := i.Queries.AddProduct(ctx, dbParams)
 
 	if err != nil {
+		logger.WithError(err).Error("error in adding a new product to the inventory")
 		return &common.ErrorResponse{
 			Status:  http.StatusInternalServerError,
 			Message: "internal server error",

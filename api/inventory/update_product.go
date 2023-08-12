@@ -8,6 +8,8 @@ import (
 	"sushi-mart/common"
 	"sushi-mart/internal/database"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 func (v *Validator) UpdateProduct(ctx context.Context, Id int, req *UpdateProductReq) (*ProductResp, *common.ErrorResponse) {
@@ -15,6 +17,7 @@ func (v *Validator) UpdateProduct(ctx context.Context, Id int, req *UpdateProduc
 }
 
 func (i *InventoryServiceImpl) UpdateProduct(ctx context.Context, Id int, req *UpdateProductReq) (*ProductResp, *common.ErrorResponse) {
+	logger := common.ExtractLoggerUnsafe(ctx).WithFields(logrus.Fields{"method": "UpdateProduct", "request": req})
 
 	dbParams := database.UpdateProductParams{ID: int32(Id), UpdateDateModified: true, DateModified: time.Now().Local()}
 
@@ -42,12 +45,14 @@ func (i *InventoryServiceImpl) UpdateProduct(ctx context.Context, Id int, req *U
 
 	if err != nil {
 		if err == sql.ErrNoRows {
+			logger.WithError(err).Error("record not found to update")
 			return nil, &common.ErrorResponse{
 				Status:  http.StatusNotFound,
 				Message: "invalid id, record not found to update",
 			}
 		}
 
+		logger.WithError(err).Error("failed to update the product in the inventory")
 		return nil, &common.ErrorResponse{
 			Status:  http.StatusInternalServerError,
 			Message: "internal server error",

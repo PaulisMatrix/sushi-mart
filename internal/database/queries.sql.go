@@ -40,6 +40,33 @@ func (q *Queries) AddProduct(ctx context.Context, arg AddProductParams) error {
 	return err
 }
 
+const addReview = `-- name: AddReview :exec
+INSERT INTO productReviews(
+  rating, review_text, review_date, customer_id, product_id
+) VALUES (
+  $1, $2, $3, $4, $5
+)
+`
+
+type AddReviewParams struct {
+	Rating     int32
+	ReviewText string
+	ReviewDate time.Time
+	CustomerID sql.NullInt32
+	ProductID  sql.NullInt32
+}
+
+func (q *Queries) AddReview(ctx context.Context, arg AddReviewParams) error {
+	_, err := q.db.ExecContext(ctx, addReview,
+		arg.Rating,
+		arg.ReviewText,
+		arg.ReviewDate,
+		arg.CustomerID,
+		arg.ProductID,
+	)
+	return err
+}
+
 const createCustomer = `-- name: CreateCustomer :one
 INSERT INTO customers (
   username, password, email, phone, address
@@ -148,6 +175,41 @@ func (q *Queries) GetAllProducts(ctx context.Context) ([]Productitem, error) {
 	return items, nil
 }
 
+const getAvgCustomerRatings = `-- name: GetAvgCustomerRatings :many
+SELECT p.name, p.category, ROUND(COALESCE(AVG(pr.rating),0)::numeric,2) AS average_rating FROM productItems p 
+LEFT JOIN productReviews pr ON p.id = pr.product_id 
+GROUP BY p.id
+`
+
+type GetAvgCustomerRatingsRow struct {
+	Name          string
+	Category      string
+	AverageRating string
+}
+
+func (q *Queries) GetAvgCustomerRatings(ctx context.Context) ([]GetAvgCustomerRatingsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAvgCustomerRatings)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAvgCustomerRatingsRow
+	for rows.Next() {
+		var i GetAvgCustomerRatingsRow
+		if err := rows.Scan(&i.Name, &i.Category, &i.AverageRating); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getCustomer = `-- name: GetCustomer :one
 SELECT id, username, password, email, phone, address FROM customers
 WHERE email = $1
@@ -165,6 +227,42 @@ func (q *Queries) GetCustomer(ctx context.Context, email string) (Customer, erro
 		&i.Address,
 	)
 	return i, err
+}
+
+const getMostOrdersPlaced = `-- name: GetMostOrdersPlaced :many
+SELECT c.username, c.email, COUNT(o.id) as orders_count FROM customers c
+INNER JOIN orders o ON c.id = o.customer_id 
+GROUP BY c.id 
+ORDER BY orders_count DESC
+`
+
+type GetMostOrdersPlacedRow struct {
+	Username    string
+	Email       string
+	OrdersCount int64
+}
+
+func (q *Queries) GetMostOrdersPlaced(ctx context.Context) ([]GetMostOrdersPlacedRow, error) {
+	rows, err := q.db.QueryContext(ctx, getMostOrdersPlaced)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetMostOrdersPlacedRow
+	for rows.Next() {
+		var i GetMostOrdersPlacedRow
+		if err := rows.Scan(&i.Username, &i.Email, &i.OrdersCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getWallet = `-- name: GetWallet :one

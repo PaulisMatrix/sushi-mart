@@ -16,7 +16,16 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
+
+var DefaultLogger *logrus.Logger
+
+// init logger
+func init() {
+	DefaultLogger = logrus.StandardLogger()
+	DefaultLogger.SetFormatter(&logrus.JSONFormatter{})
+}
 
 func main() {
 
@@ -32,7 +41,7 @@ func main() {
 	r.Use(gin.Recovery())
 
 	//setup all the routes
-	setupRoutes(r, queries, config)
+	setupRoutes(r, queries, config, DefaultLogger)
 
 	srv := &http.Server{
 		Addr:         ":8080",
@@ -62,35 +71,4 @@ func main() {
 	case <-ctx.Done():
 		log.Println("server exiting...")
 	}
-	/*
-		password := "testing"
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		if err != nil {
-			fmt.Println("ERROR IN GENERATING PASSWORD")
-		}
-
-		//create a user
-		insertedUser, err := queries.CreateCustomer(ctx, database.CreateCustomerParams{
-			Username: "rushikesh yadwade",
-			Password: string(hashedPassword),
-			Email:    "rushi@gmail.com",
-			Phone:    sql.NullString{String: "9834150521", Valid: true},
-			Address:  sql.NullString{String: "Miraj,Maharahstra", Valid: true},
-		})
-
-		if err != nil {
-			fmt.Println("ERROR IN INSERTING", err)
-		}
-
-		fmt.Println("INSERTED USER", insertedUser)
-
-		fetchedAuthor, err := queries.GetCustomer(ctx, "rushi@gmail.com")
-		fmt.Println(fetchedAuthor)
-
-		err = bcrypt.CompareHashAndPassword([]byte(fetchedAuthor.Password), []byte(password))
-
-		if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
-			fmt.Println("WRONG PASSWORD")
-		}
-	*/
 }

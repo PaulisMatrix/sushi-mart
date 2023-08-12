@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strconv"
 	"sushi-mart/common"
+
+	"github.com/sirupsen/logrus"
 )
 
 func (v *Validator) GetAllProducts(ctx context.Context) (*GetAllProductsResp, *common.ErrorResponse) {
@@ -12,8 +14,11 @@ func (v *Validator) GetAllProducts(ctx context.Context) (*GetAllProductsResp, *c
 }
 
 func (u *UsersServiceImpl) GetAllProducts(ctx context.Context) (*GetAllProductsResp, *common.ErrorResponse) {
+	logger := common.ExtractLoggerUnsafe(ctx).WithFields(logrus.Fields{"method": "GetAllProducts"})
+
 	resp, err := u.Queries.GetAllProducts(ctx)
 	if err != nil {
+		logger.WithError(err).Error("error in getting different products")
 		return nil, &common.ErrorResponse{
 			Message: "internal server error",
 			Status:  http.StatusInternalServerError,

@@ -15,6 +15,8 @@ type UsersService interface {
 	UpdateUserWallet(context.Context, *UpdateWalletReq, int) *common.ErrorResponse
 
 	GetAllProducts(context.Context) (*GetAllProductsResp, *common.ErrorResponse)
+
+	AddReview(context.Context, *AddReviewReq, int) *common.ErrorResponse
 }
 
 type UsersServiceImpl struct {

@@ -28,4 +28,26 @@ CREATE TABLE wallet(
 	date_added TIMESTAMP NOT NULL,
     date_modified TIMESTAMP NOT NULL,
 	customer_id INT REFERENCES customers(id)
-)
+);
+
+-- Define the Orders table
+CREATE TABLE orders(
+	id SERIAL PRIMARY KEY,
+	order_status VARCHAR(20) NOT NULL,
+	total_amt DECIMAL(10,3) NOT NULL,
+	units INT NOT NULL,
+	payment_type VARCHAR(20) NOT NULL,
+	order_date TIMESTAMP NOT NULL,
+	customer_id INT REFERENCES customers(id),
+	product_id INT REFERENCES productItems(id) 
+);
+
+-- Define the ProductReviews table
+CREATE TABLE productReviews(
+	id SERIAL PRIMARY KEY,
+	rating INT NOT NULL,
+	review_text TEXT NOT NULL,
+	review_date TIMESTAMP NOT NULL,
+	customer_id INT REFERENCES customers(id),
+	product_id INT REFERENCES productItems(id)
+);

@@ -178,3 +178,34 @@ func (r *RoutesWrapper) HandleAllProducts(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 	return
 }
+
+func (r *RoutesWrapper) HandleAddReview(c *gin.Context) {
+	//get userID from gin context
+	userID, ok := c.Get("user_id")
+	if !ok {
+		c.JSON(http.StatusBadRequest, "userID missing in the context")
+		return
+	}
+
+	custId, isok := userID.(int)
+	if !isok {
+		c.JSON(http.StatusBadRequest, "userID not of type int")
+		return
+	}
+
+	var input AddReviewReq
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, "bad request")
+		return
+	}
+
+	err := r.UsersService.AddReview(c.Request.Context(), &input, custId)
+
+	if err != nil {
+		c.JSON(err.Status, err.Message)
+		return
+	}
+
+	c.JSON(http.StatusOK, "successfully added your review")
+	return
+}

@@ -18,6 +18,17 @@ type Customer struct {
 	Address  sql.NullString
 }
 
+type Order struct {
+	ID          int32
+	OrderStatus string
+	TotalAmt    string
+	Units       int32
+	PaymentType string
+	OrderDate   time.Time
+	CustomerID  sql.NullInt32
+	ProductID   sql.NullInt32
+}
+
 type Productitem struct {
 	ID           int32
 	Name         string
@@ -26,6 +37,15 @@ type Productitem struct {
 	UnitPrice    string
 	DateAdded    time.Time
 	DateModified time.Time
+}
+
+type Productreview struct {
+	ID         int32
+	Rating     int32
+	ReviewText string
+	ReviewDate time.Time
+	CustomerID sql.NullInt32
+	ProductID  sql.NullInt32
 }
 
 type Wallet struct {
