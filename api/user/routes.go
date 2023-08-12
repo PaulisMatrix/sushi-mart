@@ -17,4 +17,7 @@ func (wrapper *RoutesWrapper) HandleUsers(router *gin.RouterGroup, config *commo
 
 	//to select different products
 	router.GET("/all-products", wrapper.HandleAllProducts)
+
+	//for adding reviews
+	router.POST("/add-review", wrapper.HandleAddReview)
 }

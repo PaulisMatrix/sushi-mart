@@ -1,10 +1,9 @@
--- name: CreateCustomer :one
+-- name: CreateCustomer :exec
 INSERT INTO customers (
   username, password, email, phone, address
 ) VALUES (
   $1, $2, $3, $4, $5
-)
-RETURNING *;
+);
 
 -- name: GetCustomer :one
 SELECT * FROM customers
@@ -13,6 +12,9 @@ WHERE email = $1;
 
 -- name: GetAllProducts :many
 SELECT * FROM productItems;
+
+-- name: GetProductItem :one
+SELECT * FROM productItems WHERE id = $1;
 
 -- name: AddProduct :exec
 INSERT INTO productItems(
@@ -71,3 +73,26 @@ SELECT c.username, c.email, COUNT(o.id) as orders_count FROM customers c
 INNER JOIN orders o ON c.id = o.customer_id 
 GROUP BY c.id 
 ORDER BY orders_count DESC;
+
+
+-- name: PlaceOrder :exec
+INSERT INTO orders(
+  order_status, total_amt, units, payment_type, order_date, customer_id, product_id
+) VALUES (
+  $1, $2, $3, $4, $5, $6, $7
+);
+
+-- name: UpdateOrderStatus :execrows
+UPDATE orders SET order_status = $3
+WHERE id = $1 AND order_status = $2;
+
+-- name: DeliverOrder :execrows
+UPDATE orders SET order_status = $2
+WHERE order_status = $1;
+
+-- name: GetAllPlacedOrders :many
+SELECT o.id as order_id, o.order_date, o.order_status, o.total_amt, c.username, p.name as product_name
+FROM orders o INNER JOIN customers c ON o.customer_id = c.id
+INNER JOIN productItems p ON o.product_id = p.id
+WHERE c.id = $1 
+ORDER BY o.order_date DESC;

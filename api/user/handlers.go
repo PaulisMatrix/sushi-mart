@@ -1,74 +1,81 @@
 package user
 
 import (
-	"database/sql"
-	"fmt"
 	"net/http"
 	"sushi-mart/common"
-	"sushi-mart/internal/database"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
+// @Summary User Signup
+// @Description Register a Customer
+// @Schemes http
+// @Accept json
+// @Produce json
+// @Param data body SignUpReq true "UserSignupRequest"
+// @Success 200 {string} SuccessResponse
+// @Failure 400 {object} common.ErrorResponse
+// @Failure 401 {object} common.ErrorResponse
+// @Failure 403 {object} common.ErrorResponse
+// @Failure 429 {object} common.ErrorResponse
+// @Failure 500 {object} common.ErrorResponse
+// @Router /users/signup [post]
 func (r *RoutesWrapper) SignUp(c *gin.Context) {
-	var custInput SignUpReq
+	var input SignUpReq
 
-	if err := c.ShouldBindJSON(&custInput); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, "bad request")
 		return
 	}
 
-	//generate hashed password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(custInput.Password), bcrypt.DefaultCost)
+	err := r.UsersService.CreateUser(c.Request.Context(), &input)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(err.Status, err.Message)
 		return
 	}
 
-	input := database.CreateCustomerParams{
-		Username: custInput.Username,
-		Password: string(hashedPassword),
-		Email:    custInput.Email,
-		Phone:    sql.NullString{String: custInput.Phone, Valid: true},
-		Address:  sql.NullString{String: custInput.Address, Valid: true},
-	}
-
-	resp, err := r.UsersService.CreateUser(c.Request.Context(), input)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error!"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("user added to the db with username %s", resp.Username)})
+	c.JSON(http.StatusOK, "new user created successfully")
 	return
 }
 
+// @Summary User Login
+// @Description Login a Customer and generate a new JWT Token
+// @Schemes http
+// @Accept json
+// @Produce json
+// @Param data body LoginReq true "UserLoginRequest"
+// @Success 200 {object} LoginResp
+// @Failure 400 {object} common.ErrorResponse
+// @Failure 401 {object} common.ErrorResponse
+// @Failure 403 {object} common.ErrorResponse
+// @Failure 429 {object} common.ErrorResponse
+// @Failure 500 {object} common.ErrorResponse
+// @Router /users/login [post]
 func (r *RoutesWrapper) Login(config *common.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var custInput LoginReq
-
-		if err := c.ShouldBindJSON(&custInput); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		var input LoginReq
+		if err := c.ShouldBindJSON(&input); err != nil {
+			c.JSON(http.StatusBadRequest, "bad request")
 			return
 		}
 
-		resp, err := r.UsersService.GetUser(c.Request.Context(), custInput.Email)
-		if err != nil && err == sql.ErrNoRows {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "signup first"})
+		resp, err := r.UsersService.GetUser(c.Request.Context(), &input)
+		if err != nil {
+			c.JSON(err.Status, err.Message)
 			return
 		}
 
-		err = bcrypt.CompareHashAndPassword([]byte(resp.Password), []byte(custInput.Password))
-		if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid credentials!!"})
+		hashErr := bcrypt.CompareHashAndPassword([]byte(resp.Password), []byte(input.Password))
+		if hashErr != nil && hashErr == bcrypt.ErrMismatchedHashAndPassword {
+			c.JSON(http.StatusForbidden, "invalid credentials")
 			return
 		}
 
 		//generate 1hr long token and return
-		token, err := common.GenerateNewToken(resp.ID, config)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		token, tokenErr := common.GenerateNewToken(int32(resp.CustId), config)
+		if tokenErr != nil {
+			c.JSON(http.StatusInternalServerError, "internal server error")
 			return
 		}
 		loginRes := &LoginResp{
@@ -80,6 +87,19 @@ func (r *RoutesWrapper) Login(config *common.Config) gin.HandlerFunc {
 	}
 }
 
+// @Summary Create Customer Wallet
+// @Description Create a new Wallet attached to the Customer
+// @Schemes http
+// @Accept json
+// @Produce json
+// @Param data body CreateWalletReq true "CreateWalletRequest"
+// @Success 200 {string} SuccessResponse
+// @Failure 400 {object} common.ErrorResponse
+// @Failure 401 {object} common.ErrorResponse
+// @Failure 403 {object} common.ErrorResponse
+// @Failure 429 {object} common.ErrorResponse
+// @Failure 500 {object} common.ErrorResponse
+// @Router /users/create-wallet [post]
 func (r *RoutesWrapper) HandleCreateWallet(c *gin.Context) {
 	//get userID from gin context
 	userID, ok := c.Get("user_id")
@@ -112,6 +132,18 @@ func (r *RoutesWrapper) HandleCreateWallet(c *gin.Context) {
 
 }
 
+// @Summary Get Wallet
+// @Description Returns Wallet attached to the Customer
+// @Schemes http
+// @Accept json
+// @Produce json
+// @Success 200 {object} GetWalletRes
+// @Failure 400 {object} common.ErrorResponse
+// @Failure 401 {object} common.ErrorResponse
+// @Failure 403 {object} common.ErrorResponse
+// @Failure 429 {object} common.ErrorResponse
+// @Failure 500 {object} common.ErrorResponse
+// @Router /users/get-wallet [get]
 func (r *RoutesWrapper) HandleGetWallet(c *gin.Context) {
 	//get userID from gin context
 	userID, ok := c.Get("user_id")
@@ -137,6 +169,19 @@ func (r *RoutesWrapper) HandleGetWallet(c *gin.Context) {
 	return
 }
 
+// @Summary Update Customer Wallet
+// @Description Update different fields like Balance, PaymentType, etc of a Customer
+// @Schemes http
+// @Accept json
+// @Produce json
+// @Param data body UpdateWalletReq true "UpdateWalletRequest"
+// @Success 200 {string} SuccessResponse
+// @Failure 400 {object} common.ErrorResponse
+// @Failure 401 {object} common.ErrorResponse
+// @Failure 403 {object} common.ErrorResponse
+// @Failure 429 {object} common.ErrorResponse
+// @Failure 500 {object} common.ErrorResponse
+// @Router /users/update-wallet [patch]
 func (r *RoutesWrapper) HandleUpdateWallet(c *gin.Context) {
 	//get userID from gin context
 	userID, ok := c.Get("user_id")
@@ -168,6 +213,18 @@ func (r *RoutesWrapper) HandleUpdateWallet(c *gin.Context) {
 	return
 }
 
+// @Summary Get ProductItems
+// @Description Returns a list of all ProductItems for Customer to select from
+// @Schemes http
+// @Accept json
+// @Produce json
+// @Success 200 {object} GetAllProductsResp
+// @Failure 400 {object} common.ErrorResponse
+// @Failure 401 {object} common.ErrorResponse
+// @Failure 403 {object} common.ErrorResponse
+// @Failure 429 {object} common.ErrorResponse
+// @Failure 500 {object} common.ErrorResponse
+// @Router /users/all-products [get]
 func (r *RoutesWrapper) HandleAllProducts(c *gin.Context) {
 	resp, err := r.UsersService.GetAllProducts(c.Request.Context())
 	if err != nil {
@@ -179,6 +236,19 @@ func (r *RoutesWrapper) HandleAllProducts(c *gin.Context) {
 	return
 }
 
+// @Summary Add a Review
+// @Description Registers Cutomers Reviews for a particular ProductItem
+// @Schemes http
+// @Accept json
+// @Produce json
+// @Param data body AddReviewReq true "AddReviewRequest"
+// @Success 200 {string} SuccessResponse
+// @Failure 400 {object} common.ErrorResponse
+// @Failure 401 {object} common.ErrorResponse
+// @Failure 403 {object} common.ErrorResponse
+// @Failure 429 {object} common.ErrorResponse
+// @Failure 500 {object} common.ErrorResponse
+// @Router /users/add-review [post]
 func (r *RoutesWrapper) HandleAddReview(c *gin.Context) {
 	//get userID from gin context
 	userID, ok := c.Get("user_id")

@@ -6,6 +6,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// @Summary Returns all Products
+// @Description Returns all Products present in the Inventory
+// @Schemes http
+// @Security BasicAuth
+// @Accept json
+// @Produce json
+// @Success 200 {object} GetAllProductsResp
+// @Failure 400 {object} common.ErrorResponse
+// @Failure 401 {object} common.ErrorResponse
+// @Failure 403 {object} common.ErrorResponse
+// @Failure 429 {object} common.ErrorResponse
+// @Failure 500 {object} common.ErrorResponse
+// @Router /admin/inventory/all-products [get]
 func (r *RoutesWrapper) HandleAllProducts(c *gin.Context) {
 	resp, err := r.InventoryService.GetAllProducts(c.Request.Context())
 	if err != nil {
@@ -17,6 +30,20 @@ func (r *RoutesWrapper) HandleAllProducts(c *gin.Context) {
 	return
 }
 
+// @Summary Add a Product
+// @Description Add a Product to the Inventory
+// @Schemes http
+// @Security BasicAuth
+// @Accept json
+// @Produce json
+// @Param data body AddProductReq true "AddProductRequest"
+// @Success 200 {string} SuccessResponse
+// @Failure 400 {object} common.ErrorResponse
+// @Failure 401 {object} common.ErrorResponse
+// @Failure 403 {object} common.ErrorResponse
+// @Failure 429 {object} common.ErrorResponse
+// @Failure 500 {object} common.ErrorResponse
+// @Router /admin/inventory/add-product [post]
 func (r *RoutesWrapper) HandleAddProduct(c *gin.Context) {
 	var input AddProductReq
 
@@ -36,6 +63,21 @@ func (r *RoutesWrapper) HandleAddProduct(c *gin.Context) {
 	return
 }
 
+// @Summary Update a Product
+// @Description Update a Product to the Inventory
+// @Schemes http
+// @Security BasicAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID"
+// @Param data body UpdateProductReq true "UpdateProductRequest"
+// @Success 200 {object} ProductResp
+// @Failure 400 {object} common.ErrorResponse
+// @Failure 401 {object} common.ErrorResponse
+// @Failure 403 {object} common.ErrorResponse
+// @Failure 429 {object} common.ErrorResponse
+// @Failure 500 {object} common.ErrorResponse
+// @Router /admin/inventory/update-product/{id} [post]
 func (r *RoutesWrapper) HandleUpdateProduct(c *gin.Context) {
 
 	var pathParams pathParameters
@@ -62,6 +104,20 @@ func (r *RoutesWrapper) HandleUpdateProduct(c *gin.Context) {
 	return
 }
 
+// @Summary Delete a Product
+// @Description Delete a Product to the Inventory
+// @Schemes http
+// @Security BasicAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID"
+// @Success 200 {string} SuccessResponse
+// @Failure 400 {object} common.ErrorResponse
+// @Failure 401 {object} common.ErrorResponse
+// @Failure 403 {object} common.ErrorResponse
+// @Failure 429 {object} common.ErrorResponse
+// @Failure 500 {object} common.ErrorResponse
+// @Router /admin/inventory/delete-product/{id} [post]
 func (r *RoutesWrapper) HandleDeleteProduct(c *gin.Context) {
 	var pathParams pathParameters
 	if err := c.ShouldBindUri(&pathParams); err != nil {

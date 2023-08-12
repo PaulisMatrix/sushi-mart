@@ -7,8 +7,8 @@ import (
 )
 
 type UsersService interface {
-	CreateUser(context.Context, database.CreateCustomerParams) (*database.Customer, error)
-	GetUser(context.Context, string) (*database.Customer, error)
+	CreateUser(context.Context, *SignUpReq) *common.ErrorResponse
+	GetUser(context.Context, *LoginReq) (*CustomerInfo, *common.ErrorResponse)
 
 	CreateUserWallet(context.Context, *CreateWalletReq, int) *common.ErrorResponse
 	GetUserWallet(context.Context, int) (*GetWalletRes, *common.ErrorResponse)

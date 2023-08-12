@@ -2,25 +2,49 @@ package user
 
 import (
 	"context"
+	"database/sql"
+	"net/http"
 	"sushi-mart/common"
 	"sushi-mart/internal/database"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Validator acts like a wrapper around UsersServiceImpl.AddUser
 // It does validations for incoming requests
-func (v *Validator) CreateUser(ctx context.Context, req database.CreateCustomerParams) (*database.Customer, error) {
+func (v *Validator) CreateUser(ctx context.Context, req *SignUpReq) *common.ErrorResponse {
 	return v.UsersService.CreateUser(ctx, req)
 }
 
-func (u *UsersServiceImpl) CreateUser(ctx context.Context, req database.CreateCustomerParams) (*database.Customer, error) {
-	logger := common.ExtractLoggerUnsafe(ctx).WithFields(logrus.Fields{"method": "CreateUser"})
+func (u *UsersServiceImpl) CreateUser(ctx context.Context, req *SignUpReq) *common.ErrorResponse {
+	logger := common.ExtractLoggerUnsafe(ctx).WithFields(logrus.Fields{"method": "CreateUser", "request": req})
 
-	insertedUser, err := u.Queries.CreateCustomer(ctx, req)
+	//generate hashed password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		logger.WithError(err).Error("error in creating a user")
-		return nil, err
+		logger.WithError(err).Error("error in generating hashed user password")
+		return &common.ErrorResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "internal server error",
+		}
 	}
-	return &insertedUser, err
+
+	dbParams := database.CreateCustomerParams{
+		Username: req.Username,
+		Password: string(hashedPassword),
+		Email:    req.Email,
+		Phone:    sql.NullString{String: req.Phone, Valid: true},
+		Address:  sql.NullString{String: req.Address, Valid: true},
+	}
+
+	respErr := u.Queries.CreateCustomer(ctx, dbParams)
+	if respErr != nil {
+		logger.WithError(err).Error("failed to create a new user")
+		return &common.ErrorResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "internal server error",
+		}
+	}
+	return nil
 }

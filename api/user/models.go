@@ -52,3 +52,12 @@ type AddReviewReq struct {
 	ReviewText string `json:"review_text" binding:"required"`
 	ProductId  int    `json:"product_id" binding:"required"`
 }
+
+type CustomerInfo struct {
+	CustId   int    `json:"cust_id"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone,omitempty"`
+	Address  string `json:"address,omitempty"`
+}

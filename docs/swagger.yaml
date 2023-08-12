@@ -1,0 +1,866 @@
+definitions:
+  analytics.AvgCustomerRatings:
+    properties:
+      avg_rating:
+        type: number
+      product_category:
+        type: string
+      product_name:
+        type: string
+    type: object
+  analytics.AvgCustomerRatingsResp:
+    properties:
+      avg_ratings:
+        items:
+          $ref: '#/definitions/analytics.AvgCustomerRatings'
+        type: array
+    type: object
+  analytics.MostOrdersPlacedResp:
+    properties:
+      orders_placed:
+        items:
+          $ref: '#/definitions/analytics.OrdersPlaced'
+        type: array
+    type: object
+  analytics.OrdersPlaced:
+    properties:
+      email:
+        type: string
+      order_count:
+        type: integer
+      username:
+        type: string
+    type: object
+  common.ErrorResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
+  inventory.AddProductReq:
+    properties:
+      category:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: integer
+      unit_price:
+        type: number
+    required:
+    - category
+    - name
+    - quantity
+    - unit_price
+    type: object
+  inventory.GetAllProductsResp:
+    properties:
+      products:
+        items:
+          $ref: '#/definitions/inventory.ProductResp'
+        type: array
+    type: object
+  inventory.ProductResp:
+    properties:
+      category:
+        type: string
+      date_added:
+        type: string
+      date_modified:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: integer
+      unit_price:
+        type: number
+    type: object
+  inventory.UpdateProductReq:
+    properties:
+      category:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: integer
+      unit_price:
+        type: number
+    type: object
+  orders.GetAllOrders:
+    properties:
+      order_date:
+        type: string
+      order_status:
+        type: string
+      product_name:
+        type: string
+      total_amount:
+        type: number
+      username:
+        type: string
+    type: object
+  orders.GetAllOrdersResp:
+    properties:
+      orders:
+        items:
+          $ref: '#/definitions/orders.GetAllOrders'
+        type: array
+    type: object
+  orders.PlaceOrderReq:
+    properties:
+      payment_type:
+        type: string
+      product_id:
+        type: integer
+      units:
+        type: integer
+    required:
+    - payment_type
+    - product_id
+    - units
+    type: object
+  orders.UpdateOrderReq:
+    properties:
+      order_id:
+        type: integer
+    required:
+    - order_id
+    type: object
+  user.AddReviewReq:
+    properties:
+      product_id:
+        type: integer
+      rating:
+        type: integer
+      review_text:
+        type: string
+    required:
+    - product_id
+    - rating
+    - review_text
+    type: object
+  user.CreateWalletReq:
+    properties:
+      balance:
+        type: number
+      wallet_type:
+        type: string
+    required:
+    - balance
+    - wallet_type
+    type: object
+  user.GetAllProductsResp:
+    properties:
+      products:
+        items:
+          $ref: '#/definitions/user.ProductResp'
+        type: array
+    type: object
+  user.GetWalletRes:
+    properties:
+      balance:
+        type: number
+      username:
+        type: string
+      wallet_type:
+        type: string
+    type: object
+  user.LoginReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  user.LoginResp:
+    properties:
+      token:
+        type: string
+      username:
+        type: string
+    type: object
+  user.ProductResp:
+    properties:
+      category:
+        type: string
+      date_added:
+        type: string
+      date_modified:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: integer
+      unit_price:
+        type: number
+    type: object
+  user.SignUpReq:
+    properties:
+      address:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      username:
+        type: string
+    required:
+    - address
+    - email
+    - password
+    - phone
+    - username
+    type: object
+  user.UpdateWalletReq:
+    properties:
+      balance:
+        type: number
+      wallet_type:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: An OrderManagement service
+  title: sushimart
+paths:
+  /admin/analytics/avg-cust-ratings:
+    get:
+      consumes:
+      - application/json
+      description: Returns average customer ratings for the orders pucharsed by them
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/analytics.AvgCustomerRatingsResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Returns Average Customer Ratings
+  /admin/analytics/top-orders-placed:
+    get:
+      consumes:
+      - application/json
+      description: Returns the most placed orders by the customers
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/analytics.MostOrdersPlacedResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Returns Customers Placed Orders
+  /admin/inventory/add-product:
+    post:
+      consumes:
+      - application/json
+      description: Add a Product to the Inventory
+      parameters:
+      - description: AddProductRequest
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.AddProductReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Add a Product
+  /admin/inventory/all-products:
+    get:
+      consumes:
+      - application/json
+      description: Returns all Products present in the Inventory
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory.GetAllProductsResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Returns all Products
+  /admin/inventory/delete-product/{id}:
+    post:
+      consumes:
+      - application/json
+      description: Delete a Product to the Inventory
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Delete a Product
+  /admin/inventory/update-product/{id}:
+    post:
+      consumes:
+      - application/json
+      description: Update a Product to the Inventory
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: UpdateProductRequest
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.UpdateProductReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory.ProductResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Update a Product
+  /orders/cancel-order:
+    post:
+      consumes:
+      - application/json
+      description: Cancels a Customer Order
+      parameters:
+      - description: CancelOrderRequest
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/orders.UpdateOrderReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel an Order
+  /orders/get-orders:
+    get:
+      consumes:
+      - application/json
+      description: Returns all Orders placed by the Customer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orders.GetAllOrdersResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Orders
+  /orders/place-order:
+    post:
+      consumes:
+      - application/json
+      description: Places a Customer Order
+      parameters:
+      - description: PlaceOrderRequest
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/orders.PlaceOrderReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Place an Order
+  /users/add-review:
+    post:
+      consumes:
+      - application/json
+      description: Registers Cutomers Reviews for a particular ProductItem
+      parameters:
+      - description: AddReviewRequest
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/user.AddReviewReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      summary: Add a Review
+  /users/all-products:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of all ProductItems for Customer to select from
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.GetAllProductsResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      summary: Get ProductItems
+  /users/create-wallet:
+    post:
+      consumes:
+      - application/json
+      description: Create a new Wallet attached to the Customer
+      parameters:
+      - description: CreateWalletRequest
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreateWalletReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      summary: Create Customer Wallet
+  /users/get-wallet:
+    get:
+      consumes:
+      - application/json
+      description: Returns Wallet attached to the Customer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.GetWalletRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      summary: Get Wallet
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Login a Customer and generate a new JWT Token
+      parameters:
+      - description: UserLoginRequest
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/user.LoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.LoginResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      summary: User Login
+  /users/signup:
+    post:
+      consumes:
+      - application/json
+      description: Register a Customer
+      parameters:
+      - description: UserSignupRequest
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/user.SignUpReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      summary: User Signup
+  /users/update-wallet:
+    patch:
+      consumes:
+      - application/json
+      description: Update different fields like Balance, PaymentType, etc of a Customer
+      parameters:
+      - description: UpdateWalletRequest
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdateWalletReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+      summary: Update Customer Wallet
+securityDefinitions:
+  ApiKeyAuth:
+    description: API Key to be provided for authentication
+    in: header
+    name: Authorization
+    type: apiKey
+  BasicAuth:
+    type: basic
+swagger: "2.0"

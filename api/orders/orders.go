@@ -1,13 +1,16 @@
 package orders
 
-import "sushi-mart/internal/database"
+import (
+	"context"
+	"sushi-mart/common"
+	"sushi-mart/internal/database"
+)
 
 // service for handling customer orders
 type OrderService interface {
-	AddOrder() error
-	CancelOrder() error
-	GetOrders() error
-	GetStatus() error
+	PlaceOrder(context.Context, *PlaceOrderReq, int) *common.ErrorResponse
+	CancelOrder(context.Context, *UpdateOrderReq) *common.ErrorResponse
+	GetOrders(context.Context, int) (*GetAllOrdersResp, *common.ErrorResponse)
 }
 
 type OrderServiceImpl struct {
@@ -25,7 +28,6 @@ type RoutesWrapper struct {
 	OrderService
 }
 
-/*
 func New(Queries *database.Queries) *RoutesWrapper {
 	return &RoutesWrapper{
 		OrderService: &Validator{
@@ -37,4 +39,3 @@ func New(Queries *database.Queries) *RoutesWrapper {
 		},
 	}
 }
-*/

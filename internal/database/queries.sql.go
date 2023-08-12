@@ -67,13 +67,12 @@ func (q *Queries) AddReview(ctx context.Context, arg AddReviewParams) error {
 	return err
 }
 
-const createCustomer = `-- name: CreateCustomer :one
+const createCustomer = `-- name: CreateCustomer :exec
 INSERT INTO customers (
   username, password, email, phone, address
 ) VALUES (
   $1, $2, $3, $4, $5
 )
-RETURNING id, username, password, email, phone, address
 `
 
 type CreateCustomerParams struct {
@@ -84,24 +83,15 @@ type CreateCustomerParams struct {
 	Address  sql.NullString
 }
 
-func (q *Queries) CreateCustomer(ctx context.Context, arg CreateCustomerParams) (Customer, error) {
-	row := q.db.QueryRowContext(ctx, createCustomer,
+func (q *Queries) CreateCustomer(ctx context.Context, arg CreateCustomerParams) error {
+	_, err := q.db.ExecContext(ctx, createCustomer,
 		arg.Username,
 		arg.Password,
 		arg.Email,
 		arg.Phone,
 		arg.Address,
 	)
-	var i Customer
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Password,
-		&i.Email,
-		&i.Phone,
-		&i.Address,
-	)
-	return i, err
+	return err
 }
 
 const createWallet = `-- name: CreateWallet :exec
@@ -138,6 +128,71 @@ DELETE FROM productItems WHERE id=$1
 func (q *Queries) DeletProduct(ctx context.Context, id int32) error {
 	_, err := q.db.ExecContext(ctx, deletProduct, id)
 	return err
+}
+
+const deliverOrder = `-- name: DeliverOrder :execrows
+UPDATE orders SET order_status = $2
+WHERE order_status = $1
+`
+
+type DeliverOrderParams struct {
+	OrderStatus   string
+	OrderStatus_2 string
+}
+
+func (q *Queries) DeliverOrder(ctx context.Context, arg DeliverOrderParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deliverOrder, arg.OrderStatus, arg.OrderStatus_2)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const getAllPlacedOrders = `-- name: GetAllPlacedOrders :many
+SELECT o.id as order_id, o.order_date, o.order_status, o.total_amt, c.username, p.name as product_name
+FROM orders o INNER JOIN customers c ON o.customer_id = c.id
+INNER JOIN productItems p ON o.product_id = p.id
+WHERE c.id = $1 
+ORDER BY o.order_date DESC
+`
+
+type GetAllPlacedOrdersRow struct {
+	OrderID     int32
+	OrderDate   time.Time
+	OrderStatus string
+	TotalAmt    string
+	Username    string
+	ProductName string
+}
+
+func (q *Queries) GetAllPlacedOrders(ctx context.Context, id int32) ([]GetAllPlacedOrdersRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllPlacedOrders, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllPlacedOrdersRow
+	for rows.Next() {
+		var i GetAllPlacedOrdersRow
+		if err := rows.Scan(
+			&i.OrderID,
+			&i.OrderDate,
+			&i.OrderStatus,
+			&i.TotalAmt,
+			&i.Username,
+			&i.ProductName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getAllProducts = `-- name: GetAllProducts :many
@@ -265,6 +320,25 @@ func (q *Queries) GetMostOrdersPlaced(ctx context.Context) ([]GetMostOrdersPlace
 	return items, nil
 }
 
+const getProductItem = `-- name: GetProductItem :one
+SELECT id, name, quantity, category, unit_price, date_added, date_modified FROM productItems WHERE id = $1
+`
+
+func (q *Queries) GetProductItem(ctx context.Context, id int32) (Productitem, error) {
+	row := q.db.QueryRowContext(ctx, getProductItem, id)
+	var i Productitem
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Quantity,
+		&i.Category,
+		&i.UnitPrice,
+		&i.DateAdded,
+		&i.DateModified,
+	)
+	return i, err
+}
+
 const getWallet = `-- name: GetWallet :one
 SELECT c.username, w.balance, w.wallet_type FROM wallet w 
 INNER JOIN customers c ON w.customer_id=c.id
@@ -282,6 +356,37 @@ func (q *Queries) GetWallet(ctx context.Context, id int32) (GetWalletRow, error)
 	var i GetWalletRow
 	err := row.Scan(&i.Username, &i.Balance, &i.WalletType)
 	return i, err
+}
+
+const placeOrder = `-- name: PlaceOrder :exec
+INSERT INTO orders(
+  order_status, total_amt, units, payment_type, order_date, customer_id, product_id
+) VALUES (
+  $1, $2, $3, $4, $5, $6, $7
+)
+`
+
+type PlaceOrderParams struct {
+	OrderStatus string
+	TotalAmt    string
+	Units       int32
+	PaymentType string
+	OrderDate   time.Time
+	CustomerID  sql.NullInt32
+	ProductID   sql.NullInt32
+}
+
+func (q *Queries) PlaceOrder(ctx context.Context, arg PlaceOrderParams) error {
+	_, err := q.db.ExecContext(ctx, placeOrder,
+		arg.OrderStatus,
+		arg.TotalAmt,
+		arg.Units,
+		arg.PaymentType,
+		arg.OrderDate,
+		arg.CustomerID,
+		arg.ProductID,
+	)
+	return err
 }
 
 const updateBalance = `-- name: UpdateBalance :exec
@@ -313,6 +418,25 @@ func (q *Queries) UpdateBalance(ctx context.Context, arg UpdateBalanceParams) er
 		arg.ID,
 	)
 	return err
+}
+
+const updateOrderStatus = `-- name: UpdateOrderStatus :execrows
+UPDATE orders SET order_status = $3
+WHERE id = $1 AND order_status = $2
+`
+
+type UpdateOrderStatusParams struct {
+	ID            int32
+	OrderStatus   string
+	OrderStatus_2 string
+}
+
+func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateOrderStatus, arg.ID, arg.OrderStatus, arg.OrderStatus_2)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const updateProduct = `-- name: UpdateProduct :one
