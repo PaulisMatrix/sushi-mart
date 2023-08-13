@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS customers (
     password VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     phone VARCHAR(20),
-    address TEXT
+    address TEXT,
+	is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Define the Products table
@@ -17,7 +18,8 @@ CREATE TABLE IF NOT EXISTS productItems(
 	category VARCHAR(50) NOT NULL,
     unit_price DECIMAL(10,2) NOT NULL,
     date_added TIMESTAMP NOT NULL,
-    date_modified TIMESTAMP NOT NULL 
+    date_modified TIMESTAMP NOT NULL,
+	is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Define the Wallet table
@@ -27,7 +29,8 @@ CREATE TABLE wallet(
 	wallet_type VARCHAR(20) NOT NULL,
 	date_added TIMESTAMP NOT NULL,
     date_modified TIMESTAMP NOT NULL,
-	customer_id INT REFERENCES customers(id)
+	customer_id INT REFERENCES customers(id),
+	is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Define the Orders table
@@ -39,7 +42,8 @@ CREATE TABLE orders(
 	payment_type VARCHAR(20) NOT NULL,
 	order_date TIMESTAMP NOT NULL,
 	customer_id INT REFERENCES customers(id),
-	product_id INT REFERENCES productItems(id) 
+	product_id INT REFERENCES productItems(id),
+	is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Define the ProductReviews table
@@ -49,5 +53,6 @@ CREATE TABLE productReviews(
 	review_text TEXT NOT NULL,
 	review_date TIMESTAMP NOT NULL,
 	customer_id INT REFERENCES customers(id),
-	product_id INT REFERENCES productItems(id)
+	product_id INT REFERENCES productItems(id),
+	is_active BOOLEAN NOT NULL DEFAULT TRUE
 );

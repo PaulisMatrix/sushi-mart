@@ -39,5 +39,6 @@ func (o *OrderServiceImpl) CancelOrder(ctx context.Context, req *UpdateOrderReq)
 		}
 	}
 
+	//reverting the amount is taken care by the trigger
 	return nil
 }

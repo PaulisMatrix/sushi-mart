@@ -196,7 +196,7 @@ func (q *Queries) GetAllPlacedOrders(ctx context.Context, id int32) ([]GetAllPla
 }
 
 const getAllProducts = `-- name: GetAllProducts :many
-SELECT id, name, quantity, category, unit_price, date_added, date_modified FROM productItems
+SELECT id, name, quantity, category, unit_price, date_added, date_modified, is_active FROM productItems
 `
 
 func (q *Queries) GetAllProducts(ctx context.Context) ([]Productitem, error) {
@@ -216,6 +216,7 @@ func (q *Queries) GetAllProducts(ctx context.Context) ([]Productitem, error) {
 			&i.UnitPrice,
 			&i.DateAdded,
 			&i.DateModified,
+			&i.IsActive,
 		); err != nil {
 			return nil, err
 		}
@@ -266,7 +267,7 @@ func (q *Queries) GetAvgCustomerRatings(ctx context.Context) ([]GetAvgCustomerRa
 }
 
 const getCustomer = `-- name: GetCustomer :one
-SELECT id, username, password, email, phone, address FROM customers
+SELECT id, username, password, email, phone, address, is_active FROM customers
 WHERE email = $1
 `
 
@@ -280,6 +281,7 @@ func (q *Queries) GetCustomer(ctx context.Context, email string) (Customer, erro
 		&i.Email,
 		&i.Phone,
 		&i.Address,
+		&i.IsActive,
 	)
 	return i, err
 }
@@ -321,7 +323,7 @@ func (q *Queries) GetMostOrdersPlaced(ctx context.Context) ([]GetMostOrdersPlace
 }
 
 const getProductItem = `-- name: GetProductItem :one
-SELECT id, name, quantity, category, unit_price, date_added, date_modified FROM productItems WHERE id = $1
+SELECT id, name, quantity, category, unit_price, date_added, date_modified, is_active FROM productItems WHERE id = $1
 `
 
 func (q *Queries) GetProductItem(ctx context.Context, id int32) (Productitem, error) {
@@ -335,6 +337,7 @@ func (q *Queries) GetProductItem(ctx context.Context, id int32) (Productitem, er
 		&i.UnitPrice,
 		&i.DateAdded,
 		&i.DateModified,
+		&i.IsActive,
 	)
 	return i, err
 }
@@ -453,7 +456,7 @@ SET name = CASE WHEN $1::boolean THEN $2::VARCHAR(50) ELSE name END,
     unit_price = CASE WHEN $7::boolean THEN $8::DECIMAL(10,2) ELSE unit_price END,
     date_modified = CASE WHEN $9::boolean THEN $10::TIMESTAMP ELSE date_modified END
 WHERE id = $11
-RETURNING id, name, quantity, category, unit_price, date_added, date_modified
+RETURNING id, name, quantity, category, unit_price, date_added, date_modified, is_active
 `
 
 type UpdateProductParams struct {
@@ -493,12 +496,13 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (P
 		&i.UnitPrice,
 		&i.DateAdded,
 		&i.DateModified,
+		&i.IsActive,
 	)
 	return i, err
 }
 
 const validateProductOrderReview = `-- name: ValidateProductOrderReview :one
-SELECT id, order_status, total_amt, units, payment_type, order_date, customer_id, product_id from orders 
+SELECT id, order_status, total_amt, units, payment_type, order_date, customer_id, product_id, is_active from orders 
 WHERE product_id = $1
 `
 
@@ -514,6 +518,7 @@ func (q *Queries) ValidateProductOrderReview(ctx context.Context, productID sql.
 		&i.OrderDate,
 		&i.CustomerID,
 		&i.ProductID,
+		&i.IsActive,
 	)
 	return i, err
 }

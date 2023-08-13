@@ -117,5 +117,10 @@ func (r *RoutesWrapper) HandleGetOrders(c *gin.Context) {
 		return
 	}
 
+	if resp.Orders == nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "place a few orders first"})
+		return
+	}
+
 	c.JSON(http.StatusOK, resp)
 }

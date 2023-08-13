@@ -16,6 +16,7 @@ type Customer struct {
 	Email    string
 	Phone    sql.NullString
 	Address  sql.NullString
+	IsActive bool
 }
 
 type Order struct {
@@ -27,6 +28,7 @@ type Order struct {
 	OrderDate   time.Time
 	CustomerID  sql.NullInt32
 	ProductID   sql.NullInt32
+	IsActive    bool
 }
 
 type Productitem struct {
@@ -37,6 +39,7 @@ type Productitem struct {
 	UnitPrice    string
 	DateAdded    time.Time
 	DateModified time.Time
+	IsActive     bool
 }
 
 type Productreview struct {
@@ -46,6 +49,7 @@ type Productreview struct {
 	ReviewDate time.Time
 	CustomerID sql.NullInt32
 	ProductID  sql.NullInt32
+	IsActive   bool
 }
 
 type Wallet struct {
@@ -55,4 +59,5 @@ type Wallet struct {
 	DateAdded    time.Time
 	DateModified time.Time
 	CustomerID   sql.NullInt32
+	IsActive     bool
 }
