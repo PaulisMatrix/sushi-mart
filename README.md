@@ -2,10 +2,15 @@
 Order Management System. 
 
 1. ## Access the documentation here:
-`http://localhost:8080/api/v2/swagger/index.html`
+     `http://localhost:8080/api/v2/swagger/index.html`
 
+2. ## Different modes to run the project
 
-2. ## Different routes:
+     a. Main server: `./main serve`
+
+     b. Start the background consumer which consumes the orders placed: `./main consume`
+
+3. ## Different routes:
 
      a.   Admin routes (Restricted to admins with BasicAuthentication):
 
@@ -52,7 +57,7 @@ Order Management System.
                
 
 
-3. ## TRIGGERS in the DB:
+4. ## TRIGGERS in the DB:
 
 **Trigger to check for product quantity in productItems before customer places an order**:
 
@@ -101,7 +106,8 @@ CREATE TRIGGER update_balance BEFORE INSERT ON orders
 ```
 CREATE OR REPLACE FUNCTION revert_balance_fun() RETURNS trigger AS $revert_balance_fun$
      BEGIN
-         UPDATE wallet w SET w.balance = w.balance + NEW.total_amt WHERE NEW.order_status='CANCELLED';
+         UPDATE wallet SET balance = balance + NEW.total_amt WHERE NEW.order_status='CANCELLED';
+         RETURN NEW;
      END;
 $revert_balance_fun$ LANGUAGE plpgsql;
 
@@ -139,4 +145,4 @@ CREATE TRIGGER mark_order_inactive_cust AFTER DELETE ON customers
      FOR EACH ROW EXECUTE FUNCTION mark_order_inactive_fun();
 ```
 
-4. Orders are not deleted when a productItem or customer is deleted so as to maintain history. Rather they are marked as `is_active=false`
+5. Orders are not deleted when a productItem or customer is deleted so as to maintain history. Rather they are marked as `is_active=false`

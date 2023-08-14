@@ -73,5 +73,5 @@ func setupRoutes(engine *gin.Engine, Queries *database.Queries, config *common.C
 	//jwt authenticated routes
 	router.Use(middlewares.JwtMiddleware(config))
 	orderRouterGrp := router.Group("/orders")
-	orders.New(Queries).HandleOrders(orderRouterGrp)
+	orders.New(Queries).HandleOrders(orderRouterGrp, config)
 }

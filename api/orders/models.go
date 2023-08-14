@@ -10,6 +10,7 @@ const (
 )
 
 type PlaceOrderReq struct {
+	CustomerID  int    `json:"cust_id,omitempty"`
 	Units       int    `json:"units" binding:"required"`
 	ProductId   int    `json:"product_id" binding:"required"`
 	PaymentType string `json:"payment_type" binding:"required"`

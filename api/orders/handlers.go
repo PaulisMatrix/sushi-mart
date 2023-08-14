@@ -1,7 +1,10 @@
 package orders
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
+	"sushi-mart/common"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,35 +23,43 @@ import (
 // @Failure 429 {object} common.ErrorResponse
 // @Failure 500 {object} common.ErrorResponse
 // @Router /orders/place-order [post]
-func (r *RoutesWrapper) HandlePlaceOrder(c *gin.Context) {
-	//get userID from gin context
-	userID, ok := c.Get("user_id")
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "userID missing in the context"})
+func (r *RoutesWrapper) HandlePlaceOrder(config *common.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		//get userID from gin context
+		userID, ok := c.Get("user_id")
+		if !ok {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "userID missing in the context"})
+			return
+		}
+
+		custId, isok := userID.(int)
+		if !isok {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "userID not of type int"})
+			return
+		}
+
+		input := &PlaceOrderReq{CustomerID: custId}
+		if err := c.ShouldBindJSON(input); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
+			return
+		}
+
+		//push all orders to the orders queue
+		taskBytes, err := json.Marshal(input)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
+		}
+
+		err = config.OpenQueue.PublishBytes(taskBytes)
+		if err != nil {
+			log.Println("Failed to publish to the queue")
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "internal server error"})
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "order queued successfully"})
 		return
 	}
 
-	custId, isok := userID.(int)
-	if !isok {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "userID not of type int"})
-		return
-	}
-
-	var input PlaceOrderReq
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
-		return
-	}
-
-	err := r.OrderService.PlaceOrder(c.Request.Context(), &input, custId)
-
-	if err != nil {
-		c.JSON(err.Status, gin.H{"message": err.Message})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "order placed successfully"})
-	return
 }
 
 // @Summary Cancel an Order

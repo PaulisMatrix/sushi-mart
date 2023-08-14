@@ -42,10 +42,10 @@ func ExtractLoggerUnsafe(ctx context.Context) *logrus.Logger {
 	case *logrus.Logger:
 		lg, ok := ctx.Value(LoggerKey{}).(*logrus.Logger)
 		if !ok {
-			panic("logrus.logger not being set properly")
+			return logrus.StandardLogger()
 		}
 		return lg
 	default:
-		panic("logger not being set properly")
+		return logrus.StandardLogger()
 	}
 }

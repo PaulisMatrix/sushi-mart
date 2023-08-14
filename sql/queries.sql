@@ -14,7 +14,7 @@ WHERE email = $1;
 SELECT * FROM productItems;
 
 -- name: GetProductItem :one
-SELECT * FROM productItems WHERE id = $1;
+SELECT * FROM productItems WHERE id = $1 and is_active = TRUE;
 
 -- name: AddProduct :exec
 INSERT INTO productItems(
@@ -23,8 +23,9 @@ INSERT INTO productItems(
   $1, $2, $3, $4, $5, $6
 );
 
--- name: DeletProduct :exec
-DELETE FROM productItems WHERE id=$1;
+-- name: DeletProduct :execrows
+UPDATE productItems set is_active = $2 
+WHERE id = $1;
 
 -- name: UpdateProduct :one
 UPDATE productItems
@@ -82,8 +83,8 @@ INSERT INTO orders(
   $1, $2, $3, $4, $5, $6, $7
 );
 
--- name: UpdateOrderStatus :execrows
-UPDATE orders SET order_status = $3
+-- name: CancelOrder :execrows
+UPDATE orders SET order_status = $3, is_active = FALSE
 WHERE id = $1 AND order_status = $2;
 
 -- name: DeliverOrder :execrows

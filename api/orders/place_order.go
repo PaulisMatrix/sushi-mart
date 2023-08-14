@@ -46,12 +46,13 @@ func (o *OrderServiceImpl) PlaceOrder(ctx context.Context, req *PlaceOrderReq, I
 	}
 	orderErr := o.Queries.PlaceOrder(ctx, dbParams)
 
+	// use pgx driver here to get explicit error
 	if orderErr != nil {
 		//trigger failed to run
 		logger.WithError(err).Error("failed to place the order")
 		return &common.ErrorResponse{
 			Status:  http.StatusOK,
-			Message: "insufficient balance or not enough product units available to purchase",
+			Message: "trigger failed.",
 		}
 	}
 

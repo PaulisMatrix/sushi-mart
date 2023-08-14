@@ -17,12 +17,12 @@ func (o *OrderServiceImpl) CancelOrder(ctx context.Context, req *UpdateOrderReq)
 	//cancel order only if the status is PROCESSING
 	logger := common.ExtractLoggerUnsafe(ctx).WithFields(logrus.Fields{"method": "CancelOrder", "request": req})
 
-	dbParams := database.UpdateOrderStatusParams{
+	dbParams := database.CancelOrderParams{
 		ID:            int32(req.OrderId),
 		OrderStatus:   string(PROCESSING),
 		OrderStatus_2: string(CANCELLED),
 	}
-	resp, err := o.Queries.UpdateOrderStatus(ctx, dbParams)
+	resp, err := o.Queries.CancelOrder(ctx, dbParams)
 
 	if err != nil {
 		logger.WithError(err).Error("failed to cancel the order")

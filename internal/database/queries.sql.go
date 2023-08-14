@@ -67,6 +67,25 @@ func (q *Queries) AddReview(ctx context.Context, arg AddReviewParams) error {
 	return err
 }
 
+const cancelOrder = `-- name: CancelOrder :execrows
+UPDATE orders SET order_status = $3, is_active = FALSE
+WHERE id = $1 AND order_status = $2
+`
+
+type CancelOrderParams struct {
+	ID            int32
+	OrderStatus   string
+	OrderStatus_2 string
+}
+
+func (q *Queries) CancelOrder(ctx context.Context, arg CancelOrderParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, cancelOrder, arg.ID, arg.OrderStatus, arg.OrderStatus_2)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const createCustomer = `-- name: CreateCustomer :exec
 INSERT INTO customers (
   username, password, email, phone, address
@@ -121,13 +140,22 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) erro
 	return err
 }
 
-const deletProduct = `-- name: DeletProduct :exec
-DELETE FROM productItems WHERE id=$1
+const deletProduct = `-- name: DeletProduct :execrows
+UPDATE productItems set is_active = $2 
+WHERE id = $1
 `
 
-func (q *Queries) DeletProduct(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deletProduct, id)
-	return err
+type DeletProductParams struct {
+	ID       int32
+	IsActive bool
+}
+
+func (q *Queries) DeletProduct(ctx context.Context, arg DeletProductParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deletProduct, arg.ID, arg.IsActive)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const deliverOrder = `-- name: DeliverOrder :execrows
@@ -323,7 +351,7 @@ func (q *Queries) GetMostOrdersPlaced(ctx context.Context) ([]GetMostOrdersPlace
 }
 
 const getProductItem = `-- name: GetProductItem :one
-SELECT id, name, quantity, category, unit_price, date_added, date_modified, is_active FROM productItems WHERE id = $1
+SELECT id, name, quantity, category, unit_price, date_added, date_modified, is_active FROM productItems WHERE id = $1 and is_active = TRUE
 `
 
 func (q *Queries) GetProductItem(ctx context.Context, id int32) (Productitem, error) {
@@ -427,25 +455,6 @@ func (q *Queries) UpdateBalance(ctx context.Context, arg UpdateBalanceParams) er
 		arg.ID,
 	)
 	return err
-}
-
-const updateOrderStatus = `-- name: UpdateOrderStatus :execrows
-UPDATE orders SET order_status = $3
-WHERE id = $1 AND order_status = $2
-`
-
-type UpdateOrderStatusParams struct {
-	ID            int32
-	OrderStatus   string
-	OrderStatus_2 string
-}
-
-func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, updateOrderStatus, arg.ID, arg.OrderStatus, arg.OrderStatus_2)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected()
 }
 
 const updateProduct = `-- name: UpdateProduct :one
