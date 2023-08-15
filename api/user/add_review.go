@@ -46,7 +46,7 @@ func (u *UsersServiceImpl) AddReview(ctx context.Context, req *AddReviewReq, cus
 
 	reviewErr := u.Queries.AddReview(ctx, dbParams)
 	if reviewErr != nil {
-		logger.WithError(err).Error("error in adding a new customer review")
+		logger.WithError(reviewErr).Error("error in adding a new customer review")
 		return &common.ErrorResponse{
 			Status:  http.StatusInternalServerError,
 			Message: "internal server error",

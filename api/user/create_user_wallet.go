@@ -32,7 +32,8 @@ func (i *UsersServiceImpl) CreateUserWallet(ctx context.Context, req *CreateWall
 	if err != nil {
 		logger.WithError(err).Error("error in creating a new user wallet")
 		return &common.ErrorResponse{
-			Status: http.StatusInternalServerError,
+			Status:  http.StatusInternalServerError,
+			Message: "internal server error",
 		}
 	}
 	return nil
