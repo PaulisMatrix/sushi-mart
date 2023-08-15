@@ -15,7 +15,7 @@ type InventoryService interface {
 }
 
 type InventoryServiceImpl struct {
-	Queries *database.Queries
+	Queries database.Querier
 }
 
 type Cache struct {

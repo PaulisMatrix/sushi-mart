@@ -14,6 +14,9 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
 type Handler struct {
@@ -50,10 +53,6 @@ func NewWSHandler() *WSHandler {
 }
 
 func (wsHandler *WSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	upgrader.CheckOrigin = func(r *http.Request) bool {
-		return true
-	}
-
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Fatalln("Http connection upgrade to websockets failed:", err)

@@ -14,7 +14,7 @@ type OrderService interface {
 }
 
 type OrderServiceImpl struct {
-	Queries *database.Queries
+	Queries database.Querier
 }
 
 type Cache struct {

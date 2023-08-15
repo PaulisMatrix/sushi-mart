@@ -20,7 +20,7 @@ type UsersService interface {
 }
 
 type UsersServiceImpl struct {
-	Queries *database.Queries
+	Queries database.Querier
 }
 
 type Cache struct {

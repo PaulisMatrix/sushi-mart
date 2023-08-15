@@ -49,7 +49,7 @@ func (o *OrderServiceImpl) PlaceOrder(ctx context.Context, req *PlaceOrderReq, I
 	// use pgx driver here to get explicit error
 	if orderErr != nil {
 		//trigger failed to run
-		logger.WithError(err).Error("failed to place the order")
+		logger.WithError(orderErr).Error("failed to place the order")
 		return &common.ErrorResponse{
 			Status:  http.StatusOK,
 			Message: "trigger failed.",

@@ -12,7 +12,7 @@ type AnalyticsService interface {
 }
 
 type AnalyticsServiceImpl struct {
-	Queries *database.Queries
+	Queries database.Querier
 }
 
 type Validator struct {
