@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"sushi-mart/api/orders"
@@ -29,6 +30,14 @@ const (
 	numConsumers = 3
 	retryCount   = 3
 )
+
+type sendMessage struct {
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+}
+
+// temporary in-memory queue which records the order status after consumer runs
+var statusQueue = []sendMessage{}
 
 type Consumer struct {
 	name string
@@ -158,6 +167,10 @@ func (c *Consumer) Consume(delivery rmq.Delivery) {
 		// processing order failed
 		if err.Message == "trigger failed." {
 			// report the status back to the user
+			statusQueue = append(statusQueue, sendMessage{
+				Status:  http.StatusOK,
+				Message: "insufficient balance",
+			})
 			ConsumerLogger.Info("insufficient balance or not enough product units available to purchase")
 		} else {
 			// add to a retry queue
@@ -177,6 +190,10 @@ func (c *Consumer) Consume(delivery rmq.Delivery) {
 	}
 
 	// report the status back to the user.
+	statusQueue = append(statusQueue, sendMessage{
+		Status:  http.StatusOK,
+		Message: "order_processed",
+	})
 	ConsumerLogger.Info("Order registered succesfully!!!!")
 }
 

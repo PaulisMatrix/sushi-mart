@@ -9,6 +9,7 @@ import (
 	"sushi-mart/common"
 	"sushi-mart/docs"
 	"sushi-mart/internal/database"
+	"sushi-mart/middlewares"
 	"syscall"
 	"time"
 
@@ -29,6 +30,7 @@ func server(queries *database.Queries, config *common.Config) {
 	r := gin.New()
 	r.Use(gin.Recovery())
 
+	r.Use(middlewares.CORSMiddleware())
 	//setup all the routes
 	setupRoutes(r, queries, config, DefaultLogger)
 	docs.SwaggerInfo.BasePath = "/api/v1"

@@ -48,12 +48,14 @@ func (r *RoutesWrapper) HandlePlaceOrder(config *common.Config) gin.HandlerFunc 
 		taskBytes, err := json.Marshal(input)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
+			return
 		}
 
 		err = config.OpenQueue.PublishBytes(taskBytes)
 		if err != nil {
 			log.Println("Failed to publish to the queue")
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "internal server error"})
+			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "order queued successfully"})
@@ -134,4 +136,5 @@ func (r *RoutesWrapper) HandleGetOrders(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
+	return
 }

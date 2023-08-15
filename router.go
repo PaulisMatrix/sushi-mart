@@ -29,18 +29,19 @@ func helloAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "granted admin access!!"})
 }
 
+/*
 func setupMiddlewares(router *gin.RouterGroup, config *common.Config, logger *logrus.Logger) {
 	//setup middlewares here
 	router.Use(middlewares.LoggerMiddleware(logger))
 	router.Use(middlewares.CORSMiddleware())
 	router.Use(middlewares.JwtMiddleware(config))
 }
+*/
 
 func setupRoutes(engine *gin.Engine, Queries *database.Queries, config *common.Config, logger *logrus.Logger) {
 	router := engine.Group("/api/v1")
 
 	//default middlewares
-	router.Use(middlewares.CORSMiddleware())
 	router.Use(middlewares.LoggerMiddleware(logger))
 
 	//add your routes here

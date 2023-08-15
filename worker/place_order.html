@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Place Order</title>
+</head>
+<body>
+    <h1>Place an Order</h1>
+    <form id="order-form">
+        <label for="units">Units:</label>
+        <input type="number" id="units" name="units" required><br><br>
+        
+        <label for="product_id">Product ID:</label>
+        <input type="number" id="product_id" name="product_id" required><br><br>
+        
+        <label for="payment_type">Payment Type:</label>
+        <input type="text" id="payment_type" name="payment_type" required><br><br>
+        
+        <button type="submit">Place Order</button>
+    </form>
+    <p id="response-message"></p>
+    <p id="websocket-conn-status"></p>
+
+    <script>
+        const form = document.getElementById('order-form');
+        const responseMessage = document.getElementById('response-message');
+        const wsConnStatus = document.getElementById('websocket-conn-status');
+        
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const formData = new FormData(form);
+            const requestData = {
+                units: parseInt(formData.get('units')),
+                product_id: parseInt(formData.get('product_id')),
+                payment_type: formData.get('payment_type')
+            };
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/orders/place-order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': '<add_token_here>'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    responseMessage.textContent = 'Order queued successfully';
+                } else {
+                    responseMessage.textContent = 'Error placing order';
+                }
+            } catch (error) {
+                console.error('An error occurred:', error);
+                responseMessage.textContent = 'An error occurred while placing the order';
+            }
+        });
+
+        var socket = new WebSocket('ws://localhost:3333/listen-orders');
+
+        console.log("Attempting a websocket connection")
+        
+        socket.onopen = function(){
+            console.log("connected successfully")
+            wsConnStatus.textContent = "status: Connected";  
+        }
+
+        socket.onmessage = function(event){
+            const data = JSON.parse(event.data);
+            console.log("DATA RECEIVED", data)
+        
+            if (data.message === 'order_processed') {
+                responseMessage.textContent = 'Order placed successfully';
+            } else {
+                responseMessage.textContent = data.message;
+            }
+        }
+
+        socket.onclose = function(){
+            wsConnStatus.textContent = "status: DisConnected";  
+
+            // send on close message so server knows when to stop
+            socket.send("conn closed")
+        }
+
+        socket.onerror = function(){
+            console.log("socket error", error)
+        }
+
+    </script>
+</body>
+</html>
