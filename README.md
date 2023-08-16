@@ -55,3 +55,12 @@ Order Management System.
           vii. POST: /api/v1/users/add-review - add a review for the purchased product.
 
 4. Orders are not deleted when a productItem or customer is deleted so as to maintain history. Rather they are marked as `is_active=false`
+
+## TODO:
+
+- Use pgx as the database driver instead of the default one.
+- Use docker for easy setup.
+- Add more tests.
+- An analytics dashboard displaying order trends and product popularity.(use websockets here)
+- A frontend with good UI. (use react?)
+- Use a much reliant rabbitmq as the msg broker instead of redis.
