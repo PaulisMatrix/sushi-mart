@@ -1,20 +1,22 @@
 package database
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Postgres struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
 func NewPostgres(dbname, user, password string) (*Postgres, error) {
 	connStr := fmt.Sprintf("postgresql://%s:%s@localhost/%s?sslmode=disable", user, password, dbname)
-	db, err := sql.Open("postgres", connStr)
+	//db, err := sql.Open("postgres", connStr)
+	dbpool, err := pgxpool.New(context.Background(), connStr)
+
 	if err != nil {
 		return nil, err
 	}
@@ -30,8 +32,8 @@ func NewPostgres(dbname, user, password string) (*Postgres, error) {
 			return nil, fmt.Errorf("connection timeout")
 
 		case <-ticker.C:
-			if err := db.Ping(); err == nil {
-				return &Postgres{DB: db}, nil
+			if err := dbpool.Ping(context.Background()); err == nil {
+				return &Postgres{DB: dbpool}, nil
 			}
 		}
 	}

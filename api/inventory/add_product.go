@@ -3,11 +3,12 @@ package inventory
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"sushi-mart/common"
 	"sushi-mart/internal/database"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,9 +23,9 @@ func (i *InventoryServiceImpl) AddProduct(ctx context.Context, req *AddProductRe
 		Name:         req.Name,
 		Quantity:     req.Quantity,
 		Category:     req.Category,
-		UnitPrice:    strconv.FormatFloat(req.UnitPrice, 'E', -1, 64),
-		DateAdded:    time.Now().Local(),
-		DateModified: time.Now().Local(),
+		UnitPrice:    decimal.NewFromFloat(req.UnitPrice),
+		DateAdded:    pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
+		DateModified: pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
 	}
 	err := i.Queries.AddProduct(ctx, dbParams)
 

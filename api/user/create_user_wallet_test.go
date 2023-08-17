@@ -1,29 +1,30 @@
 package user_test
 
 import (
-	"database/sql"
 	"errors"
-	"strconv"
 	"sushi-mart/api/user"
 	"sushi-mart/internal/database"
+	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 func (u *UsersServiceSuite) TestCreateWalletOkReq() {
 	Id := 10
 
 	req := &user.CreateWalletReq{
-		Balance:    float64(121212.1212),
+		Balance:    121212.1212,
 		WalletType: "PAYTM",
 	}
 
 	dbParams := database.CreateWalletParams{
-		Balance:    strconv.FormatFloat(req.Balance, 'E', -1, 64),
-		WalletType: req.WalletType,
-		//DateAdded:    time.Now().Local(),
-		//DateModified: time.Now().Local(),
-		CustomerID: sql.NullInt32{Int32: int32(Id), Valid: true},
+		Balance:      decimal.NewFromFloat(req.Balance),
+		WalletType:   req.WalletType,
+		DateAdded:    pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
+		DateModified: pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
+		CustomerID:   pgtype.Int4{Int32: int32(Id), Valid: true},
 	}
 
 	u.queriesMock.EXPECT().CreateWallet(gomock.Any(), dbParams).Return(nil)
@@ -40,11 +41,11 @@ func (u *UsersServiceSuite) TestCreateWalletBadReq() {
 	}
 
 	dbParams := database.CreateWalletParams{
-		Balance:    strconv.FormatFloat(req.Balance, 'E', -1, 64),
-		WalletType: req.WalletType,
-		//DateAdded:    time.Now().Local(),
-		//DateModified: time.Now().Local(),
-		CustomerID: sql.NullInt32{Int32: int32(Id), Valid: true},
+		Balance:      decimal.NewFromFloat(req.Balance),
+		WalletType:   req.WalletType,
+		DateAdded:    pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
+		DateModified: pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
+		CustomerID:   pgtype.Int4{Int32: int32(Id), Valid: true},
 	}
 
 	expectedErr := errors.New("internal server error")

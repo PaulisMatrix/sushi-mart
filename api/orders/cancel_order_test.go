@@ -1,11 +1,11 @@
 package orders_test
 
 import (
-	"errors"
 	"sushi-mart/api/orders"
 	"sushi-mart/internal/database"
 
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v5"
 )
 
 func (o *OrdersServiceSuite) TestCancelOrderOkReq() {
@@ -44,7 +44,7 @@ func (o *OrdersServiceSuite) TestCancelOrderBadReq() {
 	o.EqualValues(expectedMsg, errResp.Message)
 }
 
-func (o *OrdersServiceSuite) TestCancelOrder500req() {
+func (o *OrdersServiceSuite) TestCancelOrderNoRowsReq() {
 	req := &orders.UpdateOrderReq{
 		OrderId: 1,
 	}
@@ -56,10 +56,9 @@ func (o *OrdersServiceSuite) TestCancelOrder500req() {
 
 	var expectedNumRows int64
 	expectedNumRows = 0
-	expectedError := errors.New("sql: no rows in result set")
-	expectedMsg := "internal server error"
+	expectedError := pgx.ErrNoRows
 	o.queriesMock.EXPECT().CancelOrder(gomock.Any(), dbParams).Return(expectedNumRows, expectedError)
 	errResp := o.ordersService.CancelOrder(o.context, req)
 	o.NotNil(errResp)
-	o.EqualValues(expectedMsg, errResp.Message)
+	o.EqualValues(expectedError.Error(), "no rows in result set")
 }

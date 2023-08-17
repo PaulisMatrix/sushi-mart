@@ -6,6 +6,7 @@ import (
 	"sushi-mart/common"
 	"sushi-mart/internal/database"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,6 +26,14 @@ func (o *OrderServiceImpl) CancelOrder(ctx context.Context, req *UpdateOrderReq)
 	resp, err := o.Queries.CancelOrder(ctx, dbParams)
 
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			logger.WithError(err).Error("order id not found to update.")
+			return &common.ErrorResponse{
+				Status:  http.StatusNotFound,
+				Message: "invalid order id. cannot cancel the order",
+			}
+		}
+
 		logger.WithError(err).Error("failed to cancel the order")
 		return &common.ErrorResponse{
 			Status:  http.StatusInternalServerError,

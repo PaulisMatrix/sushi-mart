@@ -58,7 +58,7 @@ Order Management System.
 
 ## TODO:
 
-- Use pgx as the database driver instead of the default one.
+- ~~Use pgx as the database driver instead of the default one~~.
 - Use docker for easy setup.
 - Add more tests.
 - An analytics dashboard displaying order trends and product popularity.(use websockets here)
