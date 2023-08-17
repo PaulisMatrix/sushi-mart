@@ -6,5 +6,11 @@ sql:
   gen:
     go:
       package: "database"
+      sql_package: "pgx/v5"
       out: "internal/database"
       emit_interface: true
+      overrides:
+        - go_type: "github.com/shopspring/decimal.Decimal"
+          db_type: pg_catalog.numeric
+          
+          

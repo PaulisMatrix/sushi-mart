@@ -2,13 +2,15 @@ package orders
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"net/http"
-	"strconv"
 	"sushi-mart/common"
 	"sushi-mart/internal/database"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,7 +31,7 @@ func (o *OrderServiceImpl) PlaceOrder(ctx context.Context, req *PlaceOrderReq, I
 			Message: "internal server error",
 		}
 	}
-	unitPrice, _ := strconv.ParseFloat(prodResp.UnitPrice, 64)
+	unitPrice := prodResp.UnitPrice.Abs().InexactFloat64()
 	totalAmt := unitPrice * float64(req.Units)
 
 	//there are two triggers
@@ -37,23 +39,32 @@ func (o *OrderServiceImpl) PlaceOrder(ctx context.Context, req *PlaceOrderReq, I
 	//one for updating quantity in productItems
 	dbParams := database.PlaceOrderParams{
 		OrderStatus: string(PROCESSING),
-		TotalAmt:    strconv.FormatFloat(totalAmt, 'E', -1, 64),
+		TotalAmt:    decimal.NewFromFloat(totalAmt),
 		Units:       int32(req.Units),
 		PaymentType: req.PaymentType,
-		OrderDate:   time.Now().Local(),
-		CustomerID:  sql.NullInt32{Int32: int32(Id), Valid: true},
-		ProductID:   sql.NullInt32{Int32: int32(req.ProductId), Valid: true},
+		OrderDate:   pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
+		CustomerID:  pgtype.Int4{Int32: int32(Id), Valid: true},
+		ProductID:   pgtype.Int4{Int32: int32(req.ProductId), Valid: true},
 	}
 	orderErr := o.Queries.PlaceOrder(ctx, dbParams)
 
-	// use pgx driver here to get explicit error
 	if orderErr != nil {
 		//trigger failed to run
-		logger.WithError(orderErr).Error("failed to place the order")
-		return &common.ErrorResponse{
-			Status:  http.StatusOK,
-			Message: "trigger failed.",
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "P0001" {
+			logger.WithError(orderErr).Error("failed to place the order")
+			return &common.ErrorResponse{
+				Status:  http.StatusOK,
+				Message: "trigger failed.",
+			}
+		} else {
+			logger.WithError(err).Error("internal server eror")
+			return &common.ErrorResponse{
+				Status:  http.StatusInternalServerError,
+				Message: "internal server error",
+			}
 		}
+
 	}
 
 	return nil

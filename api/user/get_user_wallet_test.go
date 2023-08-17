@@ -1,11 +1,13 @@
 package user_test
 
 import (
-	"database/sql"
 	"sushi-mart/internal/database"
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 func (u *UsersServiceSuite) TestGetWalletOkReq() {
@@ -13,9 +15,9 @@ func (u *UsersServiceSuite) TestGetWalletOkReq() {
 
 	expectedRow := database.GetWalletRow{
 		Username:   "testing",
-		Balance:    "212313.12",
+		Balance:    decimal.NewFromFloat(212313.12),
 		WalletType: "PAYTM",
-		DateAdded:  time.Now().Local(),
+		DateAdded:  pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
 	}
 
 	u.queriesMock.EXPECT().GetWallet(gomock.Any(), int32(Id)).Return(expectedRow, nil)
@@ -28,12 +30,11 @@ func (u *UsersServiceSuite) TestGetWalletOkReq() {
 func (u *UsersServiceSuite) TestGetWalletNoCustBadReq() {
 	Id := 1
 	expectedRow := database.GetWalletRow{}
-	expectedErr := sql.ErrNoRows
-	expectedErrMsg := "wallet not found. create a wallet first"
+	expectedErr := pgx.ErrNoRows
 
 	u.queriesMock.EXPECT().GetWallet(gomock.Any(), int32(Id)).Return(expectedRow, expectedErr)
 	resp, errResp := u.UsersService.GetUserWallet(u.context, Id)
 	u.NotNil(errResp)
 	u.Nil(resp)
-	u.EqualValues(expectedErrMsg, errResp.Message)
+	u.EqualValues(expectedErr.Error(), "no rows in result set")
 }

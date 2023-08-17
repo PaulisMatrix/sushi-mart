@@ -2,11 +2,10 @@ package user
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
-	"strconv"
 	"sushi-mart/common"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,7 +19,7 @@ func (u *UsersServiceImpl) GetUserWallet(ctx context.Context, Id int) (*GetWalle
 	resp, err := u.Queries.GetWallet(ctx, int32(Id))
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			logger.WithError(err).Info("wallet not found for this user")
 			return nil, &common.ErrorResponse{
 				Status:  http.StatusOK,
@@ -34,11 +33,10 @@ func (u *UsersServiceImpl) GetUserWallet(ctx context.Context, Id int) (*GetWalle
 			Message: "internal server error",
 		}
 	}
-	bal, _ := strconv.ParseFloat(resp.Balance, 64)
 	return &GetWalletRes{
 		Username:    resp.Username,
-		Balance:     bal,
+		Balance:     resp.Balance.Abs().InexactFloat64(),
 		WalletType:  resp.WalletType,
-		WalletAdded: resp.DateAdded.String(),
+		WalletAdded: resp.DateAdded.Time.Local().String(),
 	}, nil
 }

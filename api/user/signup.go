@@ -2,11 +2,11 @@ package user
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"sushi-mart/common"
 	"sushi-mart/internal/database"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -34,8 +34,8 @@ func (u *UsersServiceImpl) CreateUser(ctx context.Context, req *SignUpReq) *comm
 		Username: req.Username,
 		Password: string(hashedPassword),
 		Email:    req.Email,
-		Phone:    sql.NullString{String: req.Phone, Valid: true},
-		Address:  sql.NullString{String: req.Address, Valid: true},
+		Phone:    pgtype.Text{String: req.Phone, Valid: true},
+		Address:  pgtype.Text{String: req.Address, Valid: true},
 	}
 
 	respErr := u.Queries.CreateCustomer(ctx, dbParams)

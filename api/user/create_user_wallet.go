@@ -2,13 +2,13 @@ package user
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
-	"strconv"
 	"sushi-mart/common"
 	"sushi-mart/internal/database"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,11 +20,11 @@ func (i *UsersServiceImpl) CreateUserWallet(ctx context.Context, req *CreateWall
 	logger := common.ExtractLoggerUnsafe(ctx).WithFields(logrus.Fields{"method": "CreateUserWallet", "request": req})
 
 	dbParams := database.CreateWalletParams{
-		Balance:      strconv.FormatFloat(req.Balance, 'E', -1, 64),
+		Balance:      decimal.NewFromFloat(req.Balance),
 		WalletType:   req.WalletType,
-		DateAdded:    time.Now().Local(),
-		DateModified: time.Now().Local(),
-		CustomerID:   sql.NullInt32{Int32: int32(Id), Valid: true},
+		DateAdded:    pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
+		DateModified: pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
+		CustomerID:   pgtype.Int4{Int32: int32(Id), Valid: true},
 	}
 
 	err := i.Queries.CreateWallet(ctx, dbParams)

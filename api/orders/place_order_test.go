@@ -1,13 +1,13 @@
 package orders_test
 
 import (
-	"database/sql"
 	"errors"
-	"strconv"
 	"sushi-mart/api/orders"
 	"sushi-mart/internal/database"
 
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 func (o *OrdersServiceSuite) TestPlaceOrderOkReq() {
@@ -23,20 +23,20 @@ func (o *OrdersServiceSuite) TestPlaceOrderOkReq() {
 		Name:      "testing",
 		Quantity:  100,
 		Category:  "testingCategory",
-		UnitPrice: "34.21",
+		UnitPrice: decimal.NewFromFloat(34.21),
 		IsActive:  true,
 	}
-	unitPrice, _ := strconv.ParseFloat(expectedProducItem.UnitPrice, 64)
+	unitPrice := expectedProducItem.UnitPrice.Abs().InexactFloat64()
 	totalAmt := unitPrice * float64(req.Units)
 
 	// comment out OrderDate in PlaceOrder otherwise expected Date would be diff than actual Date due to change in time when mocking PlaceOrder
 	dbParams := database.PlaceOrderParams{
 		OrderStatus: string(orders.PROCESSING),
-		TotalAmt:    strconv.FormatFloat(totalAmt, 'E', -1, 64),
+		TotalAmt:    decimal.NewFromFloat(totalAmt),
 		Units:       int32(req.Units),
 		PaymentType: req.PaymentType,
-		CustomerID:  sql.NullInt32{Int32: int32(Id), Valid: true},
-		ProductID:   sql.NullInt32{Int32: int32(req.ProductId), Valid: true},
+		CustomerID:  pgtype.Int4{Int32: int32(Id), Valid: true},
+		ProductID:   pgtype.Int4{Int32: int32(req.ProductId), Valid: true},
 	}
 
 	o.queriesMock.EXPECT().GetProductItem(gomock.Any(), int32(req.ProductId)).Return(expectedProducItem, nil)
@@ -58,20 +58,20 @@ func (o *OrdersServiceSuite) TestPlaceOrderBadReq() {
 		Name:      "testing",
 		Quantity:  100,
 		Category:  "testingCategory",
-		UnitPrice: "34.21",
+		UnitPrice: decimal.NewFromFloat(34.21),
 		IsActive:  true,
 	}
-	unitPrice, _ := strconv.ParseFloat(expectedProducItem.UnitPrice, 64)
+	unitPrice := expectedProducItem.UnitPrice.Abs().InexactFloat64()
 	totalAmt := unitPrice * float64(req.Units)
 
 	// comment out OrderDate in PlaceOrder otherwise expected Date would be diff than actual Date due to change in time when mocking PlaceOrder
 	dbParams := database.PlaceOrderParams{
 		OrderStatus: string(orders.PROCESSING),
-		TotalAmt:    strconv.FormatFloat(totalAmt, 'E', -1, 64),
+		TotalAmt:    decimal.NewFromFloat(totalAmt),
 		Units:       int32(req.Units),
 		PaymentType: req.PaymentType,
-		CustomerID:  sql.NullInt32{Int32: int32(Id), Valid: true},
-		ProductID:   sql.NullInt32{Int32: int32(req.ProductId), Valid: true},
+		CustomerID:  pgtype.Int4{Int32: int32(Id), Valid: true},
+		ProductID:   pgtype.Int4{Int32: int32(req.ProductId), Valid: true},
 	}
 
 	// when balance < total_amt

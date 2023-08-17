@@ -2,10 +2,10 @@ package user
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"sushi-mart/common"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,12 +19,13 @@ func (u *UsersServiceImpl) GetUser(ctx context.Context, req *LoginReq) (*Custome
 	logger := common.ExtractLoggerUnsafe(ctx).WithFields(logrus.Fields{"method": "GetUser", "request": req})
 
 	resp, err := u.Queries.GetCustomer(ctx, req.Email)
+
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			logger.WithError(err).Error("customer not found")
 			return nil, &common.ErrorResponse{
 				Status:  http.StatusBadRequest,
-				Message: "bad request",
+				Message: "need to signup first",
 			}
 		}
 		logger.WithError(err).Error("failed to get the customer")

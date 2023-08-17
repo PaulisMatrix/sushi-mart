@@ -2,12 +2,13 @@ package user
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"sushi-mart/common"
 	"sushi-mart/internal/database"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,9 +20,9 @@ func (u *UsersServiceImpl) AddReview(ctx context.Context, req *AddReviewReq, cus
 	logger := common.ExtractLoggerUnsafe(ctx).WithFields(logrus.Fields{"method": "AddReview", "request": req})
 
 	// first check if the user had placed an order for the product they are adding review for
-	_, err := u.Queries.ValidateProductOrderReview(ctx, sql.NullInt32{Int32: int32(req.ProductId), Valid: true})
+	_, err := u.Queries.ValidateProductOrderReview(ctx, pgtype.Int4{Int32: int32(custId), Valid: true})
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			// user hasn't purchased that product yet
 			logger.WithError(err).Info("user hasn't purchased this product yet")
 			return &common.ErrorResponse{
@@ -39,9 +40,9 @@ func (u *UsersServiceImpl) AddReview(ctx context.Context, req *AddReviewReq, cus
 	dbParams := database.AddReviewParams{
 		Rating:     int32(req.Rating),
 		ReviewText: req.ReviewText,
-		ReviewDate: time.Now().Local(),
-		CustomerID: sql.NullInt32{Int32: int32(custId), Valid: true},
-		ProductID:  sql.NullInt32{Int32: int32(req.ProductId), Valid: true},
+		ReviewDate: pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
+		CustomerID: pgtype.Int4{Int32: int32(custId), Valid: true},
+		ProductID:  pgtype.Int4{Int32: int32(req.ProductId), Valid: true},
 	}
 
 	reviewErr := u.Queries.AddReview(ctx, dbParams)

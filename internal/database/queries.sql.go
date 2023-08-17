@@ -7,8 +7,9 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 const addProduct = `-- name: AddProduct :exec
@@ -23,13 +24,13 @@ type AddProductParams struct {
 	Name         string
 	Quantity     int32
 	Category     string
-	UnitPrice    string
-	DateAdded    time.Time
-	DateModified time.Time
+	UnitPrice    decimal.Decimal
+	DateAdded    pgtype.Timestamp
+	DateModified pgtype.Timestamp
 }
 
 func (q *Queries) AddProduct(ctx context.Context, arg AddProductParams) error {
-	_, err := q.db.ExecContext(ctx, addProduct,
+	_, err := q.db.Exec(ctx, addProduct,
 		arg.Name,
 		arg.Quantity,
 		arg.Category,
@@ -51,13 +52,13 @@ INSERT INTO productReviews(
 type AddReviewParams struct {
 	Rating     int32
 	ReviewText string
-	ReviewDate time.Time
-	CustomerID sql.NullInt32
-	ProductID  sql.NullInt32
+	ReviewDate pgtype.Timestamp
+	CustomerID pgtype.Int4
+	ProductID  pgtype.Int4
 }
 
 func (q *Queries) AddReview(ctx context.Context, arg AddReviewParams) error {
-	_, err := q.db.ExecContext(ctx, addReview,
+	_, err := q.db.Exec(ctx, addReview,
 		arg.Rating,
 		arg.ReviewText,
 		arg.ReviewDate,
@@ -69,7 +70,7 @@ func (q *Queries) AddReview(ctx context.Context, arg AddReviewParams) error {
 
 const cancelOrder = `-- name: CancelOrder :execrows
 UPDATE orders SET order_status = $3, is_active = FALSE
-WHERE id = $1 AND order_status = $2
+WHERE id = $1 AND order_status = $2 and is_active = TRUE
 `
 
 type CancelOrderParams struct {
@@ -79,11 +80,11 @@ type CancelOrderParams struct {
 }
 
 func (q *Queries) CancelOrder(ctx context.Context, arg CancelOrderParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, cancelOrder, arg.ID, arg.OrderStatus, arg.OrderStatus_2)
+	result, err := q.db.Exec(ctx, cancelOrder, arg.ID, arg.OrderStatus, arg.OrderStatus_2)
 	if err != nil {
 		return 0, err
 	}
-	return result.RowsAffected()
+	return result.RowsAffected(), nil
 }
 
 const createCustomer = `-- name: CreateCustomer :exec
@@ -98,12 +99,12 @@ type CreateCustomerParams struct {
 	Username string
 	Password string
 	Email    string
-	Phone    sql.NullString
-	Address  sql.NullString
+	Phone    pgtype.Text
+	Address  pgtype.Text
 }
 
 func (q *Queries) CreateCustomer(ctx context.Context, arg CreateCustomerParams) error {
-	_, err := q.db.ExecContext(ctx, createCustomer,
+	_, err := q.db.Exec(ctx, createCustomer,
 		arg.Username,
 		arg.Password,
 		arg.Email,
@@ -122,15 +123,15 @@ INSERT INTO wallet(
 `
 
 type CreateWalletParams struct {
-	Balance      string
+	Balance      decimal.Decimal
 	WalletType   string
-	DateAdded    time.Time
-	DateModified time.Time
-	CustomerID   sql.NullInt32
+	DateAdded    pgtype.Timestamp
+	DateModified pgtype.Timestamp
+	CustomerID   pgtype.Int4
 }
 
 func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) error {
-	_, err := q.db.ExecContext(ctx, createWallet,
+	_, err := q.db.Exec(ctx, createWallet,
 		arg.Balance,
 		arg.WalletType,
 		arg.DateAdded,
@@ -151,16 +152,16 @@ type DeletProductParams struct {
 }
 
 func (q *Queries) DeletProduct(ctx context.Context, arg DeletProductParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deletProduct, arg.ID, arg.IsActive)
+	result, err := q.db.Exec(ctx, deletProduct, arg.ID, arg.IsActive)
 	if err != nil {
 		return 0, err
 	}
-	return result.RowsAffected()
+	return result.RowsAffected(), nil
 }
 
 const deliverOrder = `-- name: DeliverOrder :execrows
 UPDATE orders SET order_status = $2
-WHERE order_status = $1
+WHERE order_status = $1 and is_active = TRUE
 `
 
 type DeliverOrderParams struct {
@@ -169,11 +170,11 @@ type DeliverOrderParams struct {
 }
 
 func (q *Queries) DeliverOrder(ctx context.Context, arg DeliverOrderParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deliverOrder, arg.OrderStatus, arg.OrderStatus_2)
+	result, err := q.db.Exec(ctx, deliverOrder, arg.OrderStatus, arg.OrderStatus_2)
 	if err != nil {
 		return 0, err
 	}
-	return result.RowsAffected()
+	return result.RowsAffected(), nil
 }
 
 const getAllPlacedOrders = `-- name: GetAllPlacedOrders :many
@@ -186,15 +187,15 @@ ORDER BY o.order_date DESC
 
 type GetAllPlacedOrdersRow struct {
 	OrderID     int32
-	OrderDate   time.Time
+	OrderDate   pgtype.Timestamp
 	OrderStatus string
-	TotalAmt    string
+	TotalAmt    decimal.Decimal
 	Username    string
 	ProductName string
 }
 
 func (q *Queries) GetAllPlacedOrders(ctx context.Context, id int32) ([]GetAllPlacedOrdersRow, error) {
-	rows, err := q.db.QueryContext(ctx, getAllPlacedOrders, id)
+	rows, err := q.db.Query(ctx, getAllPlacedOrders, id)
 	if err != nil {
 		return nil, err
 	}
@@ -214,9 +215,6 @@ func (q *Queries) GetAllPlacedOrders(ctx context.Context, id int32) ([]GetAllPla
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -228,7 +226,7 @@ SELECT id, name, quantity, category, unit_price, date_added, date_modified, is_a
 `
 
 func (q *Queries) GetAllProducts(ctx context.Context) ([]Productitem, error) {
-	rows, err := q.db.QueryContext(ctx, getAllProducts)
+	rows, err := q.db.Query(ctx, getAllProducts)
 	if err != nil {
 		return nil, err
 	}
@@ -250,9 +248,6 @@ func (q *Queries) GetAllProducts(ctx context.Context) ([]Productitem, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -268,11 +263,11 @@ GROUP BY p.id
 type GetAvgCustomerRatingsRow struct {
 	Name          string
 	Category      string
-	AverageRating string
+	AverageRating pgtype.Numeric
 }
 
 func (q *Queries) GetAvgCustomerRatings(ctx context.Context) ([]GetAvgCustomerRatingsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getAvgCustomerRatings)
+	rows, err := q.db.Query(ctx, getAvgCustomerRatings)
 	if err != nil {
 		return nil, err
 	}
@@ -285,9 +280,6 @@ func (q *Queries) GetAvgCustomerRatings(ctx context.Context) ([]GetAvgCustomerRa
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -296,11 +288,11 @@ func (q *Queries) GetAvgCustomerRatings(ctx context.Context) ([]GetAvgCustomerRa
 
 const getCustomer = `-- name: GetCustomer :one
 SELECT id, username, password, email, phone, address, is_active FROM customers
-WHERE email = $1
+WHERE email = $1 and is_active = TRUE
 `
 
 func (q *Queries) GetCustomer(ctx context.Context, email string) (Customer, error) {
-	row := q.db.QueryRowContext(ctx, getCustomer, email)
+	row := q.db.QueryRow(ctx, getCustomer, email)
 	var i Customer
 	err := row.Scan(
 		&i.ID,
@@ -328,7 +320,7 @@ type GetMostOrdersPlacedRow struct {
 }
 
 func (q *Queries) GetMostOrdersPlaced(ctx context.Context) ([]GetMostOrdersPlacedRow, error) {
-	rows, err := q.db.QueryContext(ctx, getMostOrdersPlaced)
+	rows, err := q.db.Query(ctx, getMostOrdersPlaced)
 	if err != nil {
 		return nil, err
 	}
@@ -341,9 +333,6 @@ func (q *Queries) GetMostOrdersPlaced(ctx context.Context) ([]GetMostOrdersPlace
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -355,7 +344,7 @@ SELECT id, name, quantity, category, unit_price, date_added, date_modified, is_a
 `
 
 func (q *Queries) GetProductItem(ctx context.Context, id int32) (Productitem, error) {
-	row := q.db.QueryRowContext(ctx, getProductItem, id)
+	row := q.db.QueryRow(ctx, getProductItem, id)
 	var i Productitem
 	err := row.Scan(
 		&i.ID,
@@ -373,18 +362,18 @@ func (q *Queries) GetProductItem(ctx context.Context, id int32) (Productitem, er
 const getWallet = `-- name: GetWallet :one
 SELECT c.username, w.balance, w.wallet_type, w.date_added FROM wallet w 
 INNER JOIN customers c ON w.customer_id=c.id
-WHERE c.id = $1
+WHERE c.id = $1 and is_active = TRUE
 `
 
 type GetWalletRow struct {
 	Username   string
-	Balance    string
+	Balance    decimal.Decimal
 	WalletType string
-	DateAdded  time.Time
+	DateAdded  pgtype.Timestamp
 }
 
 func (q *Queries) GetWallet(ctx context.Context, id int32) (GetWalletRow, error) {
-	row := q.db.QueryRowContext(ctx, getWallet, id)
+	row := q.db.QueryRow(ctx, getWallet, id)
 	var i GetWalletRow
 	err := row.Scan(
 		&i.Username,
@@ -405,16 +394,16 @@ INSERT INTO orders(
 
 type PlaceOrderParams struct {
 	OrderStatus string
-	TotalAmt    string
+	TotalAmt    decimal.Decimal
 	Units       int32
 	PaymentType string
-	OrderDate   time.Time
-	CustomerID  sql.NullInt32
-	ProductID   sql.NullInt32
+	OrderDate   pgtype.Timestamp
+	CustomerID  pgtype.Int4
+	ProductID   pgtype.Int4
 }
 
 func (q *Queries) PlaceOrder(ctx context.Context, arg PlaceOrderParams) error {
-	_, err := q.db.ExecContext(ctx, placeOrder,
+	_, err := q.db.Exec(ctx, placeOrder,
 		arg.OrderStatus,
 		arg.TotalAmt,
 		arg.Units,
@@ -431,21 +420,21 @@ UPDATE wallet
 SET balance = CASE WHEN $1::boolean THEN $2::DECIMAL(20,3) ELSE balance END,
     wallet_type = CASE WHEN $3::boolean THEN $4::VARCHAR(20) ELSE wallet_type END,
     date_modified = CASE WHEN $5::boolean THEN $6::TIMESTAMP ELSE date_modified END
-WHERE id = $7
+WHERE id = $7 and is_active = TRUE
 `
 
 type UpdateBalanceParams struct {
 	UpdateBalance      bool
-	Balance            string
+	Balance            decimal.Decimal
 	UpdateWalletType   bool
 	WalletType         string
 	UpdateDateModified bool
-	DateModified       time.Time
+	DateModified       pgtype.Timestamp
 	ID                 int32
 }
 
 func (q *Queries) UpdateBalance(ctx context.Context, arg UpdateBalanceParams) error {
-	_, err := q.db.ExecContext(ctx, updateBalance,
+	_, err := q.db.Exec(ctx, updateBalance,
 		arg.UpdateBalance,
 		arg.Balance,
 		arg.UpdateWalletType,
@@ -464,7 +453,7 @@ SET name = CASE WHEN $1::boolean THEN $2::VARCHAR(50) ELSE name END,
     category = CASE WHEN $5::boolean THEN $6::VARCHAR(50) ELSE category END,
     unit_price = CASE WHEN $7::boolean THEN $8::DECIMAL(10,2) ELSE unit_price END,
     date_modified = CASE WHEN $9::boolean THEN $10::TIMESTAMP ELSE date_modified END
-WHERE id = $11
+WHERE id = $11 and is_active = TRUE
 RETURNING id, name, quantity, category, unit_price, date_added, date_modified, is_active
 `
 
@@ -476,14 +465,14 @@ type UpdateProductParams struct {
 	UpdateCategory     bool
 	Category           string
 	UpdateUnitPrice    bool
-	UnitPrice          string
+	UnitPrice          decimal.Decimal
 	UpdateDateModified bool
-	DateModified       time.Time
+	DateModified       pgtype.Timestamp
 	ID                 int32
 }
 
 func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (Productitem, error) {
-	row := q.db.QueryRowContext(ctx, updateProduct,
+	row := q.db.QueryRow(ctx, updateProduct,
 		arg.UpdateName,
 		arg.Name,
 		arg.UpdateQuantity,
@@ -512,11 +501,11 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (P
 
 const validateProductOrderReview = `-- name: ValidateProductOrderReview :one
 SELECT id, order_status, total_amt, units, payment_type, order_date, customer_id, product_id, is_active from orders 
-WHERE product_id = $1
+WHERE product_id = $1 and is_active = TRUE
 `
 
-func (q *Queries) ValidateProductOrderReview(ctx context.Context, productID sql.NullInt32) (Order, error) {
-	row := q.db.QueryRowContext(ctx, validateProductOrderReview, productID)
+func (q *Queries) ValidateProductOrderReview(ctx context.Context, productID pgtype.Int4) (Order, error) {
+	row := q.db.QueryRow(ctx, validateProductOrderReview, productID)
 	var i Order
 	err := row.Scan(
 		&i.ID,

@@ -7,7 +7,7 @@ INSERT INTO customers (
 
 -- name: GetCustomer :one
 SELECT * FROM customers
-WHERE email = $1;
+WHERE email = $1 and is_active = TRUE;
 
 
 -- name: GetAllProducts :many
@@ -34,7 +34,7 @@ SET name = CASE WHEN @update_name::boolean THEN @name::VARCHAR(50) ELSE name END
     category = CASE WHEN @update_category::boolean THEN @category::VARCHAR(50) ELSE category END,
     unit_price = CASE WHEN @update_unit_price::boolean THEN @unit_price::DECIMAL(10,2) ELSE unit_price END,
     date_modified = CASE WHEN @update_date_modified::boolean THEN @date_modified::TIMESTAMP ELSE date_modified END
-WHERE id = @id
+WHERE id = @id and is_active = TRUE
 RETURNING *;  
 
 -- name: CreateWallet :exec
@@ -47,14 +47,14 @@ INSERT INTO wallet(
 -- name: GetWallet :one
 SELECT c.username, w.balance, w.wallet_type, w.date_added FROM wallet w 
 INNER JOIN customers c ON w.customer_id=c.id
-WHERE c.id = $1;
+WHERE c.id = $1 and is_active = TRUE;
 
 -- name: UpdateBalance :exec
 UPDATE wallet 
 SET balance = CASE WHEN @update_balance::boolean THEN @balance::DECIMAL(20,3) ELSE balance END,
     wallet_type = CASE WHEN @update_wallet_type::boolean THEN @wallet_type::VARCHAR(20) ELSE wallet_type END,
     date_modified = CASE WHEN @update_date_modified::boolean THEN @date_modified::TIMESTAMP ELSE date_modified END
-WHERE id = @id;
+WHERE id = @id and is_active = TRUE;
 
 -- name: AddReview :exec
 INSERT INTO productReviews(
@@ -85,11 +85,11 @@ INSERT INTO orders(
 
 -- name: CancelOrder :execrows
 UPDATE orders SET order_status = $3, is_active = FALSE
-WHERE id = $1 AND order_status = $2;
+WHERE id = $1 AND order_status = $2 and is_active = TRUE;
 
 -- name: DeliverOrder :execrows
 UPDATE orders SET order_status = $2
-WHERE order_status = $1;
+WHERE order_status = $1 and is_active = TRUE;
 
 -- name: GetAllPlacedOrders :many
 SELECT o.id as order_id, o.order_date, o.order_status, o.total_amt, c.username, p.name as product_name
@@ -100,4 +100,4 @@ ORDER BY o.order_date DESC;
 
 -- name: ValidateProductOrderReview :one
 SELECT * from orders 
-WHERE product_id = $1;
+WHERE product_id = $1 and is_active = TRUE;

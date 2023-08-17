@@ -3,8 +3,9 @@ package inventory
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"sushi-mart/common"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func (v *Validator) GetAllProducts(ctx context.Context) (*GetAllProductsResp, *common.ErrorResponse) {
@@ -16,6 +17,14 @@ func (i *InventoryServiceImpl) GetAllProducts(ctx context.Context) (*GetAllProdu
 
 	resp, err := i.Queries.GetAllProducts(ctx)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			logger.WithError(err).Error("no products in the inventory yet")
+			return nil, &common.ErrorResponse{
+				Status:  http.StatusNotFound,
+				Message: "no products in the inventory yet",
+			}
+		}
+
 		logger.WithError(err).Error("error in getting all products from the inventory")
 		return nil, &common.ErrorResponse{
 			Message: "internal server error",
@@ -25,14 +34,13 @@ func (i *InventoryServiceImpl) GetAllProducts(ctx context.Context) (*GetAllProdu
 	var products []ProductResp
 
 	for _, p := range resp {
-		unitPrice, _ := strconv.ParseFloat(p.UnitPrice, 64)
 		products = append(products, ProductResp{
 			Name:         p.Name,
 			Quantity:     p.Quantity,
 			Category:     p.Category,
-			UnitPrice:    unitPrice,
-			DateAdded:    p.DateAdded.Local().String(),
-			DateModified: p.DateModified.Local().String(),
+			UnitPrice:    p.UnitPrice.Abs().InexactFloat64(),
+			DateAdded:    p.DateAdded.Time.Local().String(),
+			DateModified: p.DateModified.Time.Local().String(),
 		})
 	}
 

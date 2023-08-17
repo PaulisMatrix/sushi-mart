@@ -1,10 +1,7 @@
 package main
 
-//"net/http"
-
-//"github.com/gin-gonic/gin"
-
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -31,8 +28,19 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	queries := database.New(postgres.DB)
+	defer postgres.DB.Close()
 
 	switch os.Args[1] {
+	case "test-pgx":
+		fmt.Println("connected to db")
+		var greeting string
+		err = postgres.DB.QueryRow(context.Background(), "select 'Hello, world!'").Scan(&greeting)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println(greeting)
 	case "serve":
 		//start the server
 		server(queries, config)

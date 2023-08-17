@@ -2,11 +2,10 @@ package orders
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
-	"strconv"
 	"sushi-mart/common"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,7 +21,7 @@ func (o *OrderServiceImpl) GetOrders(ctx context.Context, Id int) (*GetAllOrders
 	resp, err := o.Queries.GetAllPlacedOrders(ctx, int32(Id))
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			logger.WithError(err).Info("no orders found for given customer id")
 			return nil, &common.ErrorResponse{
 				Status:  http.StatusOK,
@@ -37,11 +36,10 @@ func (o *OrderServiceImpl) GetOrders(ctx context.Context, Id int) (*GetAllOrders
 	}
 
 	for _, o := range resp {
-		amt, _ := strconv.ParseFloat(o.TotalAmt, 64)
 		orders = append(orders, GetAllOrders{
-			OrderDate:   o.OrderDate.String(),
+			OrderDate:   o.OrderDate.Time.String(),
 			OrderStatus: o.OrderStatus,
-			TotalAmount: amt,
+			TotalAmount: o.TotalAmt.Abs().InexactFloat64(),
 			Username:    o.Username,
 			ProductName: o.ProductName,
 		})

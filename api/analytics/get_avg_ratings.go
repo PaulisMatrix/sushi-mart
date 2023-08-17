@@ -2,11 +2,10 @@ package analytics
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
-	"strconv"
 	"sushi-mart/common"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,7 +20,7 @@ func (a *AnalyticsServiceImpl) GetAvgCustomerRatings(ctx context.Context) (*AvgC
 	resp, err := a.Queries.GetAvgCustomerRatings(ctx)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			logger.WithError(err).Error("records not found, add ratings and products first")
 			return nil, &common.ErrorResponse{
 				Status:  http.StatusNotFound,
@@ -36,11 +35,11 @@ func (a *AnalyticsServiceImpl) GetAvgCustomerRatings(ctx context.Context) (*AvgC
 	}
 
 	for _, r := range resp {
-		avgRating, _ := strconv.ParseFloat(r.AverageRating, 64)
+		avgRating, _ := r.AverageRating.Float64Value()
 		avgRatings = append(avgRatings, AvgCustomerRatings{
 			ProductName:     r.Name,
 			ProductCategory: r.Category,
-			AvgRating:       avgRating,
+			AvgRating:       avgRating.Float64,
 		})
 	}
 

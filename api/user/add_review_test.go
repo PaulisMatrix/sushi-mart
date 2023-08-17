@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 func (u *UsersServiceSuite) TestAddReviewOkReq() {
@@ -20,20 +23,20 @@ func (u *UsersServiceSuite) TestAddReviewOkReq() {
 	expectedResp := database.Order{
 		ID:          1,
 		OrderStatus: "DELIVERED",
-		TotalAmt:    "1212.212",
+		TotalAmt:    decimal.NewFromFloat(1212.212),
 		Units:       int32(10),
 		PaymentType: "GPAY",
-		OrderDate:   time.Now().Local(),
-		CustomerID:  sql.NullInt32{Int32: int32(1), Valid: true},
-		ProductID:   sql.NullInt32{Int32: int32(1), Valid: true},
+		OrderDate:   pgtype.Timestamp{Time: time.Now().Local(), Valid: true},
+		CustomerID:  pgtype.Int4{Int32: int32(custId), Valid: true},
+		ProductID:   pgtype.Int4{Int32: int32(1), Valid: true},
 		IsActive:    true,
 	}
 
 	dbParams := database.AddReviewParams{
 		Rating:     int32(req.Rating),
 		ReviewText: req.ReviewText,
-		CustomerID: sql.NullInt32{Int32: int32(custId), Valid: true},
-		ProductID:  sql.NullInt32{Int32: int32(req.ProductId), Valid: true},
+		CustomerID: pgtype.Int4{Int32: int32(custId), Valid: true},
+		ProductID:  pgtype.Int4{Int32: int32(1), Valid: true},
 	}
 
 	u.queriesMock.EXPECT().ValidateProductOrderReview(gomock.Any(), sql.NullInt32{Int32: int32(req.ProductId), Valid: true}).Return(expectedResp, nil)
@@ -50,11 +53,10 @@ func (u *UsersServiceSuite) TestAddReviewOrderNABadReq() {
 		ProductId:  1,
 	}
 
-	expectedErr := sql.ErrNoRows
-	expectedErrMsg := "need to purchase this product before reviewing"
+	expectedErr := pgx.ErrNoRows
 
 	u.queriesMock.EXPECT().ValidateProductOrderReview(gomock.Any(), sql.NullInt32{Int32: int32(req.ProductId), Valid: true}).Return(database.Order{}, expectedErr)
 	errResp := u.UsersService.AddReview(u.context, req, custId)
 	u.NotNil(errResp)
-	u.EqualValues(expectedErrMsg, errResp.Message)
+	u.EqualValues(expectedErr.Error(), "no rows in result set")
 }

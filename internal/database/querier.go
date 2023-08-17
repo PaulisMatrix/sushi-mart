@@ -6,10 +6,10 @@ package database
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-//go:generate mockgen -destination=./mocks/queries.go -package=mock_queries . Querier
 type Querier interface {
 	AddProduct(ctx context.Context, arg AddProductParams) error
 	AddReview(ctx context.Context, arg AddReviewParams) error
@@ -28,7 +28,7 @@ type Querier interface {
 	PlaceOrder(ctx context.Context, arg PlaceOrderParams) error
 	UpdateBalance(ctx context.Context, arg UpdateBalanceParams) error
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) (Productitem, error)
-	ValidateProductOrderReview(ctx context.Context, productID sql.NullInt32) (Order, error)
+	ValidateProductOrderReview(ctx context.Context, productID pgtype.Int4) (Order, error)
 }
 
 var _ Querier = (*Queries)(nil)

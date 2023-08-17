@@ -5,8 +5,8 @@
 package database
 
 import (
-	"database/sql"
-	"time"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 type Customer struct {
@@ -14,20 +14,20 @@ type Customer struct {
 	Username string
 	Password string
 	Email    string
-	Phone    sql.NullString
-	Address  sql.NullString
+	Phone    pgtype.Text
+	Address  pgtype.Text
 	IsActive bool
 }
 
 type Order struct {
 	ID          int32
 	OrderStatus string
-	TotalAmt    string
+	TotalAmt    decimal.Decimal
 	Units       int32
 	PaymentType string
-	OrderDate   time.Time
-	CustomerID  sql.NullInt32
-	ProductID   sql.NullInt32
+	OrderDate   pgtype.Timestamp
+	CustomerID  pgtype.Int4
+	ProductID   pgtype.Int4
 	IsActive    bool
 }
 
@@ -36,9 +36,9 @@ type Productitem struct {
 	Name         string
 	Quantity     int32
 	Category     string
-	UnitPrice    string
-	DateAdded    time.Time
-	DateModified time.Time
+	UnitPrice    decimal.Decimal
+	DateAdded    pgtype.Timestamp
+	DateModified pgtype.Timestamp
 	IsActive     bool
 }
 
@@ -46,18 +46,18 @@ type Productreview struct {
 	ID         int32
 	Rating     int32
 	ReviewText string
-	ReviewDate time.Time
-	CustomerID sql.NullInt32
-	ProductID  sql.NullInt32
+	ReviewDate pgtype.Timestamp
+	CustomerID pgtype.Int4
+	ProductID  pgtype.Int4
 	IsActive   bool
 }
 
 type Wallet struct {
 	ID           int32
-	Balance      string
+	Balance      decimal.Decimal
 	WalletType   string
-	DateAdded    time.Time
-	DateModified time.Time
-	CustomerID   sql.NullInt32
+	DateAdded    pgtype.Timestamp
+	DateModified pgtype.Timestamp
+	CustomerID   pgtype.Int4
 	IsActive     bool
 }

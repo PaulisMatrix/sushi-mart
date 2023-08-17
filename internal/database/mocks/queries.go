@@ -6,11 +6,11 @@ package mock_queries
 
 import (
 	context "context"
-	sql "database/sql"
 	reflect "reflect"
 	database "sushi-mart/internal/database"
 
 	gomock "github.com/golang/mock/gomock"
+	pgtype "github.com/jackc/pgx/v5/pgtype"
 )
 
 // MockQuerier is a mock of Querier interface.
@@ -286,7 +286,7 @@ func (mr *MockQuerierMockRecorder) UpdateProduct(arg0, arg1 interface{}) *gomock
 }
 
 // ValidateProductOrderReview mocks base method.
-func (m *MockQuerier) ValidateProductOrderReview(arg0 context.Context, arg1 sql.NullInt32) (database.Order, error) {
+func (m *MockQuerier) ValidateProductOrderReview(arg0 context.Context, arg1 pgtype.Int4) (database.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidateProductOrderReview", arg0, arg1)
 	ret0, _ := ret[0].(database.Order)

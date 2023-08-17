@@ -2,13 +2,14 @@ package inventory
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
-	"strconv"
 	"sushi-mart/common"
 	"sushi-mart/internal/database"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,7 +20,7 @@ func (v *Validator) UpdateProduct(ctx context.Context, Id int, req *UpdateProduc
 func (i *InventoryServiceImpl) UpdateProduct(ctx context.Context, Id int, req *UpdateProductReq) (*ProductResp, *common.ErrorResponse) {
 	logger := common.ExtractLoggerUnsafe(ctx).WithFields(logrus.Fields{"method": "UpdateProduct", "request": req})
 
-	dbParams := database.UpdateProductParams{ID: int32(Id), UpdateDateModified: true, DateModified: time.Now().Local()}
+	dbParams := database.UpdateProductParams{ID: int32(Id), UpdateDateModified: true, DateModified: pgtype.Timestamp{Time: time.Now().Local(), Valid: true}}
 
 	if req.Name == "" {
 		dbParams.UpdateName = false
@@ -47,16 +48,16 @@ func (i *InventoryServiceImpl) UpdateProduct(ctx context.Context, Id int, req *U
 
 	if req.UnitPrice > 0 {
 		dbParams.UpdateUnitPrice = true
-		dbParams.UnitPrice = strconv.FormatFloat(req.UnitPrice, 'E', -1, 64)
+		dbParams.UnitPrice = decimal.NewFromFloat(req.UnitPrice)
 	} else {
 		dbParams.UpdateUnitPrice = false
-		dbParams.UnitPrice = strconv.FormatFloat(req.UnitPrice, 'E', -1, 64)
+		dbParams.UnitPrice = decimal.NewFromFloat(req.UnitPrice)
 	}
 
 	resp, err := i.Queries.UpdateProduct(ctx, dbParams)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			logger.WithError(err).Error("record not found to update")
 			return nil, &common.ErrorResponse{
 				Status:  http.StatusNotFound,
@@ -71,14 +72,12 @@ func (i *InventoryServiceImpl) UpdateProduct(ctx context.Context, Id int, req *U
 		}
 	}
 
-	unitPrice, _ := strconv.ParseFloat(resp.UnitPrice, 64)
-
 	return &ProductResp{
 		Name:         resp.Name,
 		Quantity:     resp.Quantity,
 		Category:     resp.Category,
-		UnitPrice:    unitPrice,
-		DateAdded:    resp.DateAdded.Local().String(),
-		DateModified: resp.DateModified.Local().String(),
+		UnitPrice:    resp.UnitPrice.Abs().InexactFloat64(),
+		DateAdded:    resp.DateAdded.Time.Local().String(),
+		DateModified: resp.DateModified.Time.Local().String(),
 	}, nil
 }

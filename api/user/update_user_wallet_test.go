@@ -1,12 +1,12 @@
 package user_test
 
 import (
-	"database/sql"
-	"strconv"
 	"sushi-mart/api/user"
 	"sushi-mart/internal/database"
 
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v5"
+	"github.com/shopspring/decimal"
 )
 
 func (u *UsersServiceSuite) TestUpdateWalletOkReq() {
@@ -18,10 +18,10 @@ func (u *UsersServiceSuite) TestUpdateWalletOkReq() {
 
 	if req.Balance > 0 {
 		dbParams.UpdateBalance = true
-		dbParams.Balance = strconv.FormatFloat(req.Balance, 'E', -1, 64)
+		dbParams.Balance = decimal.NewFromFloat(req.Balance)
 	} else {
 		dbParams.UpdateBalance = false
-		dbParams.Balance = strconv.FormatFloat(req.Balance, 'E', -1, 64)
+		dbParams.Balance = decimal.NewFromFloat(req.Balance)
 	}
 
 	if req.WalletType == "" {
@@ -46,10 +46,10 @@ func (u *UsersServiceSuite) TestUpdateWalletBadReq() {
 
 	if req.Balance > 0 {
 		dbParams.UpdateBalance = true
-		dbParams.Balance = strconv.FormatFloat(req.Balance, 'E', -1, 64)
+		dbParams.Balance = decimal.NewFromFloat(req.Balance)
 	} else {
 		dbParams.UpdateBalance = false
-		dbParams.Balance = strconv.FormatFloat(req.Balance, 'E', -1, 64)
+		dbParams.Balance = decimal.NewFromFloat(req.Balance)
 	}
 
 	if req.WalletType == "" {
@@ -60,11 +60,10 @@ func (u *UsersServiceSuite) TestUpdateWalletBadReq() {
 		dbParams.WalletType = req.WalletType
 	}
 
-	expectedErr := sql.ErrNoRows
-	expectedErrMsg := "invalid user id. pass correct user id to update the record"
+	expectedErr := pgx.ErrNoRows
 
 	u.queriesMock.EXPECT().UpdateBalance(gomock.Any(), dbParams).Return(expectedErr)
 	errResp := u.UsersService.UpdateUserWallet(u.context, req, Id)
 	u.NotNil(errResp)
-	u.EqualValues(expectedErrMsg, errResp.Message)
+	u.EqualValues(expectedErr.Error(), "no rows in result set")
 }

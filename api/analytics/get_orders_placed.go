@@ -2,10 +2,10 @@ package analytics
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"sushi-mart/common"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,7 +22,7 @@ func (a *AnalyticsServiceImpl) GetMostOrdersPlaced(ctx context.Context, limit in
 	resp, err := a.Queries.GetMostOrdersPlaced(ctx)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			logger.WithError(err).Error("records not found. add orders first")
 			return nil, &common.ErrorResponse{
 				Status:  http.StatusNotFound,
