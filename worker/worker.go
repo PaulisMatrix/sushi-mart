@@ -42,6 +42,9 @@ var statusQueue = []sendMessage{}
 type Consumer struct {
 	name string
 	orders.OrderService
+	ackErrRetryCount    int
+	rejectErrRetryCount int
+	pushErrRetryCount   int
 }
 
 func NewConsumer(queries *database.Queries, name string) *Consumer {
@@ -117,7 +120,7 @@ func Consume(queries *database.Queries, config *common.Config, logger *logrus.Lo
 	}
 
 	// start a cleaner which will place all unack deliveries back into ready queue
-	go func(conn rmq.Connection) {
+	go func(conn rmq.Connection, ConsumerLogger *logrus.Logger) {
 		cleaner := rmq.NewCleaner(conn)
 		// clean for every 1 min
 		for range time.Tick(time.Minute) {
@@ -128,10 +131,24 @@ func Consume(queries *database.Queries, config *common.Config, logger *logrus.Lo
 			}
 			ConsumerLogger.WithField("num_cleaned", returned).Info("number of records cleaned")
 		}
-	}(conn)
+	}(conn, ConsumerLogger)
 
 	//start the stats server
 	go statsServer(conn)
+
+	//start a purger to purge the rejected delivery which we don't want to retyr
+	go func(conn rmq.Connection, queue rmq.Queue, ConsumerLogger *logrus.Logger) {
+		// purge for every half an hour
+		for range time.Tick(30 * time.Minute) {
+			count, err := queue.PurgeRejected()
+			if err != nil {
+				ConsumerLogger.WithError(err).Error("Failed to purge rejected deliveries")
+				continue
+			}
+			ConsumerLogger.WithField("count", count).Info("number of purged deliveries")
+		}
+
+	}(conn, queue, ConsumerLogger)
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT)
@@ -158,7 +175,10 @@ func (c *Consumer) Consume(delivery rmq.Delivery) {
 		// bad request, reject delivery
 		// payload gets moved from unack queue to rejected queue
 		// need a method to remove those rejected deliveries
-		delivery.Reject()
+		err = delivery.Reject()
+		if err != nil {
+			c.rejectErrRetryCount++
+		}
 	}
 
 	// place the order
@@ -174,7 +194,10 @@ func (c *Consumer) Consume(delivery rmq.Delivery) {
 			ConsumerLogger.Info("insufficient balance or not enough product units available to purchase")
 		} else {
 			// add to a retry queue
-			delivery.Push()
+			err := delivery.Push()
+			if err != nil {
+				c.pushErrRetryCount++
+			}
 		}
 	}
 
@@ -184,9 +207,17 @@ func (c *Consumer) Consume(delivery rmq.Delivery) {
 		if errors.Is(ackErr, rmq.ErrorConsumingStopped) {
 			// consuming stopped. cleaner will move such delivers back into ready queue when consumers are up
 			ConsumerLogger.WithError(ackErr).Error("consuming stopped")
+			os.Exit(1)
 		}
-
-		ConsumerLogger.WithError(ackErr).Error("consuming stopped for unkown reason")
+		if c.ackErrRetryCount > retryCount {
+			ConsumerLogger.WithField("ack_retry_count", c.ackErrRetryCount).Info("rejecting the delivery after 3 ack retries")
+			err := delivery.Reject()
+			if err != nil {
+				c.rejectErrRetryCount++
+			}
+		}
+		c.ackErrRetryCount++
+		ConsumerLogger.WithError(ackErr).Error("delivery failed to acknowledge")
 	}
 
 	// report the status back to the user.
@@ -208,13 +239,6 @@ func handleErrors(errChan <-chan error) {
 
 		case *rmq.DeliveryError:
 			// delivery error on ack, reject, push.
-			// maintain a count to reject after X retries
-			// this error lacks differentiating between whether its cause of ack, reject or push
-			if err.Count >= retryCount {
-				// reject the request
-				ConsumerLogger.WithError(err).WithField("retry_count", retryCount).Error("requested rejected")
-				err.Delivery.Reject()
-			}
 			ConsumerLogger.WithError(err).Error("delivery error")
 
 		default:
