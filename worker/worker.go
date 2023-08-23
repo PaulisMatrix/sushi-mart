@@ -119,20 +119,6 @@ func Consume(queries *database.Queries, config *common.Config, logger *logrus.Lo
 		os.Exit(1)
 	}
 
-	// start a cleaner which will place all unack deliveries back into ready queue
-	go func(conn rmq.Connection, ConsumerLogger *logrus.Logger) {
-		cleaner := rmq.NewCleaner(conn)
-		// clean for every 1 min
-		for range time.Tick(time.Minute) {
-			returned, err := cleaner.Clean()
-			if err != nil {
-				ConsumerLogger.WithError(err).Error("failed to clean")
-				continue
-			}
-			ConsumerLogger.WithField("num_cleaned", returned).Info("number of records cleaned")
-		}
-	}(conn, ConsumerLogger)
-
 	//start the stats server
 	go statsServer(conn)
 

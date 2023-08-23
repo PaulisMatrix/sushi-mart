@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -31,22 +30,15 @@ func main() {
 	defer postgres.DB.Close()
 
 	switch os.Args[1] {
-	case "test-pgx":
-		fmt.Println("connected to db")
-		var greeting string
-		err = postgres.DB.QueryRow(context.Background(), "select 'Hello, world!'").Scan(&greeting)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-			os.Exit(1)
-		}
-
-		fmt.Println(greeting)
 	case "serve":
 		//start the server
 		server(queries, config)
 	case "consume":
 		//start the bg consumer
 		worker.Consume(queries, config, DefaultLogger)
+	case "clean":
+		//start the cleaner
+		worker.Clean(DefaultLogger)
 	default:
 		fmt.Println("unknown command")
 		os.Exit(1)
