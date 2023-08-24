@@ -29,7 +29,7 @@ type RoutesWrapper struct {
 	InventoryService
 }
 
-func New(Queries *database.Queries) *RoutesWrapper {
+func New(Queries database.Querier) *RoutesWrapper {
 	return &RoutesWrapper{
 		InventoryService: &Validator{
 			InventoryService: &Cache{

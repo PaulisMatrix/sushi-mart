@@ -362,7 +362,7 @@ func (q *Queries) GetProductItem(ctx context.Context, id int32) (Productitem, er
 const getWallet = `-- name: GetWallet :one
 SELECT c.username, w.balance, w.wallet_type, w.date_added FROM wallet w 
 INNER JOIN customers c ON w.customer_id=c.id
-WHERE c.id = $1 and is_active = TRUE
+WHERE c.id = $1 and c.is_active = TRUE
 `
 
 type GetWalletRow struct {

@@ -27,7 +27,7 @@ type RoutesWrapper struct {
 	AnalyticsService
 }
 
-func New(Queries *database.Queries) *RoutesWrapper {
+func New(Queries database.Querier) *RoutesWrapper {
 	return &RoutesWrapper{
 		AnalyticsService: &Cache{
 			AnalyticsService: &Validator{

@@ -28,7 +28,7 @@ type RoutesWrapper struct {
 	OrderService
 }
 
-func New(Queries *database.Queries) *RoutesWrapper {
+func New(Queries database.Querier) *RoutesWrapper {
 	return &RoutesWrapper{
 		OrderService: &Validator{
 			OrderService: &Cache{

@@ -47,7 +47,7 @@ INSERT INTO wallet(
 -- name: GetWallet :one
 SELECT c.username, w.balance, w.wallet_type, w.date_added FROM wallet w 
 INNER JOIN customers c ON w.customer_id=c.id
-WHERE c.id = $1 and is_active = TRUE;
+WHERE c.id = $1 and c.is_active = TRUE;
 
 -- name: UpdateBalance :exec
 UPDATE wallet 

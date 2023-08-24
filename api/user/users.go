@@ -34,7 +34,7 @@ type RoutesWrapper struct {
 	UsersService
 }
 
-func New(Queries *database.Queries) *RoutesWrapper {
+func New(Queries database.Querier) *RoutesWrapper {
 	return &RoutesWrapper{
 		UsersService: &Validator{
 			UsersService: &Cache{

@@ -26,7 +26,7 @@ import (
 // @description API Key to be provided for authentication
 // @securityDefinitions.basic BasicAuth
 
-func server(queries *database.Queries, config *common.Config) {
+func server(queries database.Querier, config *common.Config) {
 	r := gin.New()
 	r.Use(gin.Recovery())
 
