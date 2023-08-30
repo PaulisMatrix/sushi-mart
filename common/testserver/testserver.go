@@ -1,7 +1,7 @@
-package main
+package testserver
 
 import (
-	"net/http"
+	"net/http/httptest"
 	"sushi-mart/api/analytics"
 	"sushi-mart/api/inventory"
 	"sushi-mart/api/orders"
@@ -12,39 +12,33 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	swaggerfiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func healthCheck(c *gin.Context) {
-	logger := common.ExtractLoggerUnsafe(c.Request.Context())
-	logger.WithField("method", "healthcheck").Info("healthcheck called")
-
-	c.JSON(http.StatusOK, gin.H{"status": "pong!!"})
+type GinServer struct {
+	*httptest.Server
+	//Config      *common.Config
+	//RouterGroup *gin.RouterGroup
 }
 
-func helloAdmin(c *gin.Context) {
-	logger := common.ExtractLoggerUnsafe(c.Request.Context())
-	logger.WithError(nil).WithField("method", "helloAdmin").Error(" called")
-	c.JSON(http.StatusOK, gin.H{"status": "granted admin access!!"})
+func GetNewTestGinServer() *GinServer {
+	r := gin.New()
+	r.Use(gin.Recovery())
+
+	r.Use(middlewares.CORSMiddleware())
+
+	//setup all the routes during tests init
+
+	s := httptest.NewUnstartedServer(r)
+	return &GinServer{
+		Server: s,
+	}
 }
 
-func setupRoutes(engine *gin.Engine, queries database.Querier, config *common.Config, logger *logrus.Logger) {
+func (s *GinServer) SetupRoutes(engine *gin.Engine, queries database.Querier, config *common.Config, logger *logrus.Logger) {
 	router := engine.Group("/api/v1")
 
 	//default middlewares
 	router.Use(middlewares.LoggerMiddleware(logger))
-
-	//add your routes here
-	router.GET("/ping", healthCheck)
-
-	//swagger docs
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-
-	//admin routes
-	router.GET("/admin/login", gin.BasicAuth(gin.Accounts{
-		config.AdminUser: config.AdminPass,
-	}), helloAdmin)
 
 	//routergroup for managing inventory, restricted to admins
 	inventoryRouterGrp := router.Group("/admin/inventory", gin.BasicAuth(gin.Accounts{
