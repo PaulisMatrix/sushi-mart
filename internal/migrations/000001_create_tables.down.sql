@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS customers;
+
+DROP TABLE IF EXISTS productItems;
+
+DROP TABLE IF EXISTS wallet;
+
+DROP TABLE IF EXISTS orders;
+
+DROP TABLE IF EXISTS productReviews;

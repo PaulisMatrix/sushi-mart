@@ -8,8 +8,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var producerQueue rmq.Queue
+
+var producerConn rmq.Connection
+
 type Config struct {
 	PgDbName       string
+	PgTestDbName   string
 	PgUser         string
 	PgPass         string
 	JwtSktKey      string
@@ -17,17 +22,17 @@ type Config struct {
 	AdminPass      string
 	QueueName      string
 	RetryQueueName string
-	OpenQueue      rmq.Queue
 }
 
 func GetConfig() *Config {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("Error loading .env file", err)
 		return nil
 	}
 	return &Config{
 		PgDbName:       os.Getenv("POSTGRES_DB"),
+		PgTestDbName:   os.Getenv("POSTGRES_TESTDB"),
 		PgUser:         os.Getenv("POSTGRES_USER"),
 		PgPass:         os.Getenv("POSTGRES_PASS"),
 		JwtSktKey:      os.Getenv("JWTSECRETKEY"),
@@ -35,7 +40,6 @@ func GetConfig() *Config {
 		AdminPass:      os.Getenv("ADMIN_PASS"),
 		QueueName:      os.Getenv("QUEUE_NAME"),
 		RetryQueueName: os.Getenv("RETRY_QUEUE_NAME"),
-		OpenQueue:      newRMQQueue(os.Getenv("QUEUE_NAME")),
 	}
 }
 
@@ -54,12 +58,25 @@ func GetNewRMQConn(errChanSize int) rmq.Connection {
 	return connection
 }
 
-func newRMQQueue(queueName string) rmq.Queue {
-	connection := GetNewRMQConn(0)
-	newQueue, err := connection.OpenQueue(queueName)
-	if err != nil {
-		log.Fatal("failed to open a new queue")
+func getProducerConnection() rmq.Connection {
+	if producerConn != nil {
+		return producerConn
+	}
+	producerConn = GetNewRMQConn(0)
+	return producerConn
+}
+
+func GetProducerQueue(queueName string) (rmq.Queue, error) {
+	conn := getProducerConnection()
+
+	if producerQueue != nil {
+		return producerQueue, nil
 	}
 
-	return newQueue
+	producerQueue, err := conn.OpenQueue(queueName)
+	if err != nil {
+		log.Fatal("failed to open a new queue")
+		return nil, err
+	}
+	return producerQueue, nil
 }

@@ -1,4 +1,3 @@
--- Define the Customers table
 CREATE TABLE IF NOT EXISTS customers (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
@@ -9,7 +8,6 @@ CREATE TABLE IF NOT EXISTS customers (
 	is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Define the Products table
 CREATE TABLE IF NOT EXISTS productItems( 
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(50) NOT NULL,
@@ -21,8 +19,8 @@ CREATE TABLE IF NOT EXISTS productItems(
 	is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Define the Wallet table
-CREATE TABLE wallet(
+
+CREATE TABLE IF NOT EXISTS wallet(
 	id SERIAL PRIMARY KEY,
 	balance DECIMAL(20,3) NOT NULL,
 	wallet_type VARCHAR(20) NOT NULL,
@@ -32,8 +30,8 @@ CREATE TABLE wallet(
 	is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Define the Orders table
-CREATE TABLE orders(
+
+CREATE TABLE IF NOT EXISTS orders(
 	id SERIAL PRIMARY KEY,
 	order_status VARCHAR(20) NOT NULL,
 	total_amt DECIMAL(20,3) NOT NULL,
@@ -45,8 +43,7 @@ CREATE TABLE orders(
 	is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Define the ProductReviews table
-CREATE TABLE productReviews(
+CREATE TABLE IF NOT EXISTS productReviews(
 	id SERIAL PRIMARY KEY,
 	rating INT NOT NULL,
 	review_text TEXT NOT NULL,

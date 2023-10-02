@@ -39,6 +39,8 @@ func main() {
 	case "clean":
 		//start the cleaner
 		worker.Clean(DefaultLogger)
+	case "test-mig":
+		database.MigrationsTest()
 	default:
 		fmt.Println("unknown command")
 		os.Exit(1)

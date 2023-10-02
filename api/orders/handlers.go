@@ -51,7 +51,14 @@ func (r *RoutesWrapper) HandlePlaceOrder(config *common.Config) gin.HandlerFunc 
 			return
 		}
 
-		err = config.OpenQueue.PublishBytes(taskBytes)
+		producerQueue, err := common.GetProducerQueue(config.QueueName)
+		if err != nil {
+			log.Println("Failed to open the producer queue")
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "internal server error"})
+			return
+		}
+
+		err = producerQueue.PublishBytes(taskBytes)
 		if err != nil {
 			log.Println("Failed to publish to the queue")
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "internal server error"})
